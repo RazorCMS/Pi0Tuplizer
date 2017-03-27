@@ -1,0 +1,16 @@
+Type                                  Module                      Label             Process   
+----------------------------------------------------------------------------------------------
+BXVector<GlobalAlgBlk>                "hltGtStage2Digis"          ""                "HLT"     
+BXVector<GlobalExtBlk>                "hltGtStage2Digis"          ""                "HLT"     
+BXVector<l1t::EGamma>                 "hltGtStage2Digis"          "EGamma"          "HLT"     
+BXVector<l1t::EtSum>                  "hltGtStage2Digis"          "EtSum"           "HLT"     
+BXVector<l1t::Jet>                    "hltGtStage2Digis"          "Jet"             "HLT"     
+BXVector<l1t::Muon>                   "hltGtStage2Digis"          "Muon"            "HLT"     
+BXVector<l1t::Tau>                    "hltGtStage2Digis"          "Tau"             "HLT"     
+EBDigiCollection                      "hltAlCaEtaEBRechitsToDigis"   "etaEBDigis"      "HLT"     
+EBDigiCollection                      "hltAlCaPi0EBRechitsToDigis"   "pi0EBDigis"      "HLT"     
+EEDigiCollection                      "hltAlCaEtaEERechitsToDigis"   "etaEEDigis"      "HLT"     
+EEDigiCollection                      "hltAlCaPi0EERechitsToDigis"   "pi0EEDigis"      "HLT"     
+edm::SortedCollection<EcalRecHit,edm::StrictWeakOrdering<EcalRecHit> >    "hltAlCaEtaRecHitsFilterEEonlyRegional"   "etaEcalRecHitsES"   "HLT"     
+edm::SortedCollection<EcalRecHit,edm::StrictWeakOrdering<EcalRecHit> >    "hltAlCaPi0RecHitsFilterEEonlyRegional"   "pi0EcalRecHitsES"   "HLT"     
+edm::TriggerResults                   "TriggerResults"            ""                "HLT"     
