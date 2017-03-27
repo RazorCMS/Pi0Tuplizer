@@ -166,6 +166,9 @@ private:
 	float pho_S2S9;	
 	float pho_S1S9;	
 	int pho_Nxtal;	
+	float pho_x;
+	float pho_y;
+	float pho_z;
 		
  //reconstructed variables shared for each event
  	std::vector< CaloCluster > ebclusters;

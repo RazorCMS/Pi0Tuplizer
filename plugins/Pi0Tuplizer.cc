@@ -260,6 +260,9 @@ void Pi0Tuplizer::recoPhoCluster_EB()
 		pho_S2S9 = s2s9;
 		pho_S1S9 = (maxEne)/e3x3; 
 		pho_Nxtal = RecHitsInWindow.size();
+		pho_x = clusPos.x();
+		pho_y = clusPos.y();
+		pho_z = clusPos.z();
 		if(FillPhotonNtuple_ ) PhoEvents->Fill();
 		
 	}//end loop of all seed xtals	
@@ -540,6 +543,9 @@ void Pi0Tuplizer::setBranches()
   	PhoEvents->Branch("pho_S2S9", &pho_S2S9, "pho_S2S9/F");
   	PhoEvents->Branch("pho_S1S9", &pho_S1S9, "pho_S1S9/F");
   	PhoEvents->Branch("pho_Nxtal", &pho_Nxtal, "pho_Nxtal/I");
+  	PhoEvents->Branch("pho_x", &pho_x, "pho_x/F");
+  	PhoEvents->Branch("pho_y", &pho_y, "pho_y/F");
+  	PhoEvents->Branch("pho_z", &pho_z, "pho_z/F");
 	
 }
 
@@ -598,6 +604,9 @@ void Pi0Tuplizer::resetBranches()
 	pho_S2S9=0;
 	pho_S1S9=0;
 	pho_Nxtal=0;
+	pho_x=0;
+	pho_y=0;
+	pho_z=0;
 }
 
 void Pi0Tuplizer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
