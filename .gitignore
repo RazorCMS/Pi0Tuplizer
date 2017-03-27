@@ -1,0 +1,8 @@
+__init__.py*
+*.pyc
+*.root
+*.pdf
+*.swp
+crab/
+crab.log
+*.*~
