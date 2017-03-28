@@ -15,11 +15,20 @@
 #include <iostream>
 using namespace std;
 
-class HLTeff: public Pi0Events {
+//class HLTeff: public Pi0Events {
+class HLTeff{
     public :
-        HLTeff(TTree *tree=0);
+	Pi0Events * onT;
+	Pi0Events * offT;
+        HLTeff(TTree *onTree=0, TTree *offTree=0);
 	virtual ~HLTeff();
 	virtual void Analyze();
+
+	const float leftMargin   = 0.12;
+	const float rightMargin  = 0.05;
+	const float topMargin    = 0.07;
+	const float bottomMargin = 0.12;
+
 };
 
 #endif
