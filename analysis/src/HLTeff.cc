@@ -48,7 +48,6 @@ void HLTeff::Analyze()
 	for(int i=0;i<onT_nentries;i++)
 	{
 		onT->fChain->GetEntry(i);
-		//cout<<" entry "<<i<<" seed bit size  "<<onT->L1SeedBitFinalDecision->size()<<endl;
 		for(int ind_bit=0;ind_bit<onT->L1SeedBitFinalDecision->size();ind_bit++)
 		{
 			h_L1Seed_Online->Fill(onT->L1SeedBitFinalDecision->at(ind_bit));
@@ -58,7 +57,6 @@ void HLTeff::Analyze()
 	for(int i=0;i<offT_nentries;i++)
 	{
 		offT->fChain->GetEntry(i);
-		//cout<<" entry "<<i<<" seed bit size  "<<onT->L1SeedBitFinalDecision->size()<<endl;
 		for(int ind_bit=0;ind_bit<offT->L1SeedBitFinalDecision->size();ind_bit++)
 		{
 			h_L1Seed_Offline->Fill(offT->L1SeedBitFinalDecision->at(ind_bit));
