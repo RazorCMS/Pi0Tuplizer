@@ -9,35 +9,24 @@ LDFLAGS := $(shell root-config --glibs) $(STDLIBDIR) -lRooFit -lRooFitCore -L$(I
 
 CPPFLAGS += -g -std=c++11
 
-TARGET = testapp 
-TARGET2 = HLTeffApp 
+TARGET1 = HLTeffApp 
 
-SRC = app/testapp.cc src/Pi0Events.cc src/PhoEvents.cc src/HLTeff.cc
-SRC2 = app/HLTeffApp.cc src/Pi0Events.cc 
+SRC1 = app/HLTeffApp.cc src/Pi0Events.cc 
 
-OBJ = $(SRC:.cc=.o)
-OBJ2 = $(SRC2:.cc=.o)
+OBJ1 = $(SRC1:.cc=.o)
 
-all : $(TARGET) $(TARGET2)
+all : $(TARGET1)
 
-$(TARGET) : $(OBJ)
-	$(LD) $(CPPFLAGS) -o $(TARGET) $(OBJ) $(LDFLAGS)
+$(TARGET1) : $(OBJ1)
+	$(LD) $(CPPFLAGS) -o $(TARGET1) $(OBJ1) $(LDFLAGS)
 	@echo $@
 	@echo $<
 	@echo $^
-
-$(TARGET2) : $(OBJ2)
-	$(LD) $(CPPFLAGS) -o $(TARGET2) $(OBJ2) $(LDFLAGS)
-	@echo $@
-	@echo $<
-	@echo $^
-
 
 %.o : %.cc
 	$(CXX) $(CPPFLAGS) -o $@ -c $<
 	@echo $@
 	@echo $<
 
-
 clean :
-	rm -f *.o app/*.o src/*.o $(TARGET) $(TARGET2) *~
+	rm -f *.o app/*.o src/*.o $(TARGET1) *~
