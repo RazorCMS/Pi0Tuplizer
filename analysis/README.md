@@ -11,6 +11,6 @@ make
 run
 -----------------------------
 ```
-./testapp YOUR_INPUT_FILE_PATH
+./HLTeffApp YOUR_INPUT_FILE_PATH_1 YOUR_INPUT_FILE_PATH_2
 ```
 
