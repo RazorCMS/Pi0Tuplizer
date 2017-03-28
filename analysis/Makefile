@@ -11,7 +11,7 @@ CPPFLAGS += -g -std=c++11
 
 TARGET = testapp 
 
-SRC = app/testapp.cc src/Pi0Events.cc src/PhoEvents.cc
+SRC = app/testapp.cc src/Pi0Events.cc src/PhoEvents.cc src/HLTeff.cc
 
 OBJ = $(SRC:.cc=.o)
 

@@ -6,10 +6,6 @@
 #include <TFile.h>
 #include <vector>
 
-#define NL1SEED 300
-#define NPI0MAX 300
-
-
 class PhoEvents {
 public:
 	TTree          *fChain;   //!pointer to the analyzed TTree or TChain
