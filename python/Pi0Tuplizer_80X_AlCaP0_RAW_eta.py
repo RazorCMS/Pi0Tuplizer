@@ -32,7 +32,7 @@ process.load("DQMOffline.Configuration.DQMOfflineMC_cff")
 process.load('Configuration.StandardSequences.Reconstruction_cff')
 
 process.GlobalTag.globaltag = '80X_dataRun2_2016LegacyRepro_Candidate_v2'
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1000000) )
 process.MessageLogger.cerr.FwkReport.reportEvery = 10000
 process.options = cms.untracked.PSet(
    wantSummary = cms.untracked.bool(True),
@@ -61,7 +61,7 @@ process.ntuples = cms.EDAnalyzer('Pi0Tuplizer',
 uGtAlgInputTag = cms.untracked.InputTag('hltGtStage2Digis'),
 EBRecHitCollectionTag = cms.untracked.InputTag("ecalRecHit","EcalRecHitsEB","Pi0Tuplizer"),
 EERecHitCollectionTag = cms.untracked.InputTag("ecalRecHit","EcalRecHitsEE","Pi0Tuplizer"),
-ESRecHitCollectionTag = cms.untracked.InputTag("hltAlCaPi0RecHitsFilterEEonlyRegional", "etaEcalRecHitsES"),
+ESRecHitCollectionTag = cms.untracked.InputTag("hltAlCaEtaRecHitsFilterEEonlyRegional", "etaEcalRecHitsES"),
 PhotonOrderOption = cms.untracked.string("SeedEBased"),# "SeedEBased" (g1 is the one with larger seed Energy) or "PhoPtBased"(g1 is the one with larger pt)
 EB_Seed_E = cms.untracked.double(0.5),
 EE_Seed_E = cms.untracked.double(0.5),
@@ -112,13 +112,13 @@ else:
 process.dummyHits = cms.EDProducer('DummyRechitDigis',
                                      doDigi = cms.untracked.bool(True),
                                      # rechits
-                                     barrelHitProducer      = cms.InputTag('hltAlCaPi0EBUncalibrator','etaEcalRecHitsEB'),
-                                     endcapHitProducer      = cms.InputTag('hltAlCaPi0EEUncalibrator','etaEcalRecHitsEE'),
+                                     barrelHitProducer      = cms.InputTag('hltAlCaPi0EBUncalibrator','pi0EcalRecHitsEB'),
+                                     endcapHitProducer      = cms.InputTag('hltAlCaPi0EEUncalibrator','pi0EcalRecHitsEE'),
                                      barrelRecHitCollection = cms.untracked.string('dummyBarrelRechits'),
                                      endcapRecHitCollection = cms.untracked.string('dummyEndcapRechits'),
                                      # digis
-                                     barrelDigis            = cms.InputTag("hltAlCaPi0EBRechitsToDigis","etaEBDigis"),
-                                     endcapDigis            = cms.InputTag("hltAlCaPi0EERechitsToDigis","etaEEDigis"),
+                                     barrelDigis            = cms.InputTag("hltAlCaEtaEBRechitsToDigis","etaEBDigis"),
+                                     endcapDigis            = cms.InputTag("hltAlCaEtaEERechitsToDigis","etaEEDigis"),
                                      barrelDigiCollection   = cms.untracked.string('dummyBarrelDigis'),
                                      endcapDigiCollection   = cms.untracked.string('dummyEndcapDigis'))
 
