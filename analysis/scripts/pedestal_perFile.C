@@ -13,6 +13,14 @@
 void pedestal_perFile(std::string input_file_name="input.dat", std::string outfileName = "output.root")
 {
 
+	//std::string input_base_directory = "/eos/cms/store/group/phys_susy/razor/EcalTiming/EcalPedestals_Legacy2016_time_v1/dump_files/";
+	//std::string output_base_directory = "/eos/cms/store/group/phys_susy/razor/EcalTiming/EcalPedestals_Legacy2016_time_v1/root_files/";
+	//std::string input_file_name = input_base_directory+input_name;
+	//std::string outfileName = output_base_directory+outName;
+
+	//cout<<"input file: "<<input_file_name<<endl;
+	//cout<<"output file: "<<outfileName<<endl;
+
 	TFile *outfile = new TFile(outfileName.c_str(),"RECREATE");
 	TTree *outTree = new TTree("pedestal", "pedestals for different IOVs");
 
@@ -130,4 +138,5 @@ void pedestal_perFile(std::string input_file_name="input.dat", std::string outfi
 	
 	outTree->Write();
 
+	outfile->Close();
 }

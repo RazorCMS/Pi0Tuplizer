@@ -59,7 +59,7 @@ void pedestal_cmd()
 	std::string outfileName = "/eos/cms/store/group/phys_susy/razor/EcalTiming/EcalPedestals_Legacy2016_time_v1/root_files/tree_since_"+substr_since_second+"_till_"+substr_till_second+".root";
 
 
-	cout<<"root -l -b -q pedestal.C+(\\\""<<input_file_name<<"\\\",\\\""<<outfileName+"\\\")"<<endl;
+	cout<<"root -l -b -q pedestal_perFile.C+(\\\""<<input_file_name<<"\\\",\\\""<<outfileName+"\\\")"<<endl;
 	
 	}
 
