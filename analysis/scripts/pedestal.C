@@ -1,13 +1,23 @@
+//root
+#include <TTree.h>
+#include <TFile.h>
+#include <iostream>
 
+//c++
+#include <iostream>
+#include <string>
+#include <fstream>
+#include <sstream>
+#include <vector>
 
-void pedestal()
+void pedestal(std::string input_list="list_EcalPedestals_Legacy2016_time_v1.list", std::string outfileName = "/eos/cms/store/group/phys_susy/razor/EcalTiming/pedestal_tree_EcalPedestals_Legacy2016_time_v1.root")
 {
 
-	TFile *outfile = new TFile("/afs/cern.ch/user/z/zhicaiz/eos/cms/store/group/phys_susy/razor/EcalTiming/pedestal_tree_EcalPedestals_Legacy2016_time_v1.root","RECREATE");
+	TFile *outfile = new TFile(outfileName.c_str(),"RECREATE");
 	TTree *outTree = new TTree("pedestal", "pedestals for different IOVs");
 
-	long long int start_time_ns;
-	long long int end_time_ns;
+	uint start_time_second;
+	uint end_time_second;
 	std:: vector <int> iEta;
 	std:: vector <int> iPhi;
 	std:: vector <float> mean_G12;
@@ -18,8 +28,8 @@ void pedestal()
 	std:: vector <float> rms_G1;
 	std:: vector <int> detID;
 	
-	outTree->Branch("start_time_ns", &start_time_ns);//, "start_time_ns/i");
-	outTree->Branch("end_time_ns", &end_time_ns);//, "end_time_ns/i");
+	outTree->Branch("start_time_second", &start_time_second);//, "start_time_second/i");
+	outTree->Branch("end_time_second", &end_time_second);//, "end_time_second/i");
 	outTree->Branch("iEta", &iEta);
 	outTree->Branch("iPhi", &iPhi);
 	outTree->Branch("mean_G12", &mean_G12);
@@ -31,10 +41,10 @@ void pedestal()
 	outTree->Branch("detID", &detID);
 
 
-	ifstream inputListFile("list_EcalPedestals_Legacy2016_time_v1.list");	
+	ifstream inputListFile(input_list.c_str());	
 
 
-	std::string input_file_name ;// = "/afs/cern.ch/user/z/zhicaiz/eos/cms/store/group/phys_susy/razor/EcalTiming/EcalPedestals_Legacy2016_time_v1/dump_EcalPedestals__since_6283272764451192832_till_6283284357567924735.dat";
+	std::string input_file_name ;// = "/eos/cms/store/group/phys_susy/razor/EcalTiming/EcalPedestals_Legacy2016_time_v1/dump_EcalPedestals__since_6283272764451192832_till_6283284357567924735.dat";
 
 	while(!inputListFile.eof())
 	{
@@ -46,16 +56,22 @@ void pedestal()
 
 	std::string substr_since = input_file_name.substr(since_pos+7, 19);	
 	std::string substr_till = input_file_name.substr(till_pos+6, 19);	
+
+	long long int s_time_tmp;
+	long long int e_time_tmp;
 	
 	stringstream ss_since;
 	ss_since<<substr_since;
-	ss_since>>start_time_ns;
+	ss_since>>s_time_tmp;
 
 	stringstream ss_till;
 	ss_till<<substr_till;
-	ss_till>>end_time_ns;
+	ss_till>>e_time_tmp;
+	
+	start_time_second = s_time_tmp>>32;
+	end_time_second = e_time_tmp>>32;
 
-	cout<<"processing IOV from "<<start_time_ns<<"  to  "<<end_time_ns<<endl;
+	cout<<"processing IOV from "<<s_time_tmp<<" (Unix "<< start_time_second<<" ) to  "<<e_time_tmp<<" (Unix "<<end_time_second<<"  )"<<endl;
 
 
 	ifstream inputFile(input_file_name.c_str());
