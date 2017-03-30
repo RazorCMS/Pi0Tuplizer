@@ -102,6 +102,8 @@ void Pi0Tuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
   	runNum = iEvent.id().run();
   	lumiNum = iEvent.luminosityBlock();
   	eventNum = iEvent.id().event();
+	eventTime = iEvent.eventAuxiliary().time().unixTime();
+
 //call specific functions
 	if(FillL1SeedFinalDecision_) GetL1SeedBit();
 	recoPhoCluster_EB();//reconstruct photon clusters in EB
@@ -496,6 +498,7 @@ void Pi0Tuplizer::setBranches()
   	Pi0Events->Branch("runNum", &runNum, "runNum/i");
   	Pi0Events->Branch("lumiNum", &lumiNum, "lumiNum/i");
   	Pi0Events->Branch("eventNum", &eventNum, "eventNum/i");
+  	Pi0Events->Branch("eventTime", &eventTime, "eventTime/i");
   	Pi0Events->Branch( "allL1SeedFinalDecision", allL1SeedFinalDecision, "allL1SeedFinalDecision[300]/O");
 	Pi0Events->Branch("L1SeedBitFinalDecision", "vector<int>", &L1SeedBitFinalDecision);
 
@@ -531,6 +534,7 @@ void Pi0Tuplizer::setBranches()
 	PhoEvents->Branch("runNum", &runNum, "runNum/i");
   	PhoEvents->Branch("lumiNum", &lumiNum, "lumiNum/i");
   	PhoEvents->Branch("eventNum", &eventNum, "eventNum/i");
+  	PhoEvents->Branch("eventTime", &eventTime, "eventTime/i");
   	PhoEvents->Branch("pho_E", &pho_E, "pho_E/F");
   	PhoEvents->Branch("pho_Eta", &pho_Eta, "pho_Eta/F");
   	PhoEvents->Branch("pho_iEta", &pho_iEta, "pho_iEta/I");
@@ -555,6 +559,7 @@ void Pi0Tuplizer::resetBranches()
 	runNum = -1;
 	lumiNum = -1;
 	eventNum = -1;
+	eventTime = -1;
 	for(int i=0;i<NL1SEED;i++)
 	{
 	allL1SeedFinalDecision[i] = false;

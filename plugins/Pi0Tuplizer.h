@@ -47,6 +47,8 @@
 #include "DataFormats/EcalDetId/interface/EEDetId.h"
 #include "DataFormats/EcalDetId/interface/EcalSubdetector.h"
 #include "DataFormats/Math/interface/LorentzVector.h"
+#include "DataFormats/Provenance/interface/Timestamp.h"
+#include "DataFormats/Provenance/interface/EventAuxiliary.h"
 
 #include "RecoEcal/EgammaCoreTools/interface/EcalRecHitLess.h"
 #include "RecoEcal/EgammaCoreTools/interface/PositionCalc.h"
@@ -121,6 +123,8 @@ private:
       	uint    runNum;
       	uint    lumiNum;
       	uint    eventNum;
+	uint 	eventTime;//in second, since 1970
+
 	bool    allL1SeedFinalDecision[NL1SEED];
 	vector<int> * L1SeedBitFinalDecision;
 
