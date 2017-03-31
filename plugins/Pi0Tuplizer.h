@@ -102,6 +102,7 @@ private:
  //specific functions 
    	void loadEvent(const edm::Event& iEvent, const edm::EventSetup& iSetup); //call at the beginning of each event to get input handles from the python config
 	virtual void resetBranches(); // clear all variables
+	virtual void resetPhoBranches(); // clear all variables in PhoEvents tree
    	virtual void setBranches(); // set branch of ntuple
 	void GetL1SeedBit();
 	void recoPhoCluster_EB();
@@ -142,9 +143,13 @@ private:
 	float 	ptG1_rec[NPI0MAX];	
 	float 	ptG2_rec[NPI0MAX];	
 	int 	iEtaG1_rec[NPI0MAX];	
+	int 	iXG1_rec[NPI0MAX];	
 	int 	iEtaG2_rec[NPI0MAX];	
+	int 	iXG2_rec[NPI0MAX];	
 	int 	iPhiG1_rec[NPI0MAX];	
+	int 	iYG1_rec[NPI0MAX];	
 	int 	iPhiG2_rec[NPI0MAX];	
+	int 	iYG2_rec[NPI0MAX];	
 	float 	deltaRG1G2_rec[NPI0MAX];	
 	int 	nxtalG1_rec[NPI0MAX];	
 	int 	nxtalG2_rec[NPI0MAX];	
@@ -161,8 +166,10 @@ private:
 	float pho_E;	
 	float pho_Eta;	
 	int pho_iEta;	
+	int pho_iX;	
 	float pho_Phi;	
 	int pho_iPhi;	
+	int pho_iY;	
 	float pho_Pt;	
 	float pho_SeedTime;	
 	float pho_ClusterTime;	

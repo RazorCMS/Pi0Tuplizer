@@ -1,4 +1,9 @@
 __init__.py*
+*.__afs*
+*.log
+*.d
+*.so
+*.pcm
 *.o
 *.pyc
 *.root
