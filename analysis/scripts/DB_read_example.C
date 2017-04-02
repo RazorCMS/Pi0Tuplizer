@@ -50,7 +50,7 @@ vector <int> *detID_all;
 
 float getTimeCalibConstant(TTree *tree, vector <uint> & start_run, vector <uint> & end_run, uint run, int detID)
 {
-	float timeCalib = 1.0;
+	float timeCalib = 0.0;
 
 	int N_entries = tree->GetEntries();
 	int i_entry=0;
@@ -63,14 +63,14 @@ float getTimeCalibConstant(TTree *tree, vector <uint> & start_run, vector <uint>
 		}
 	}
 
-	if(i_entry> N_entries) return timeCalib;
+	if(i_entry>= N_entries) return timeCalib;
 	tree->GetEntry(i_entry);
 	std::vector<int>::iterator p_id;
 	p_id = std::find(detID_all->begin(), detID_all->end(), detID);
 	if (p_id == detID_all->end()) return timeCalib;
 	int idx = std::distance(detID_all->begin(), p_id);
 
-	if(idx<=IC_time_all->size()) timeCalib = IC_time_all->at(idx);	
+	if(idx<IC_time_all->size()) timeCalib = IC_time_all->at(idx);	
 
 	return timeCalib;
 };
