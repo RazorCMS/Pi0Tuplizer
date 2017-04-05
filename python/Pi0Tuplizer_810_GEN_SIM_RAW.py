@@ -1,4 +1,10 @@
-
+#########################options##############################
+isMC_ = True
+isPi0_ = True
+FillL1SeedFinalDecision_ = True
+FillDiPhotonNtuple_ = True
+FillPhotonNtuple_ = True
+#########################options##############################
 import FWCore.ParameterSet.Config as cms
 import RecoLocalCalo.EcalRecProducers.ecalRecalibRecHit_cfi
 import os, sys, imp, re
@@ -47,8 +53,56 @@ process.TFileService = cms.Service("TFileService",
 #provide input parameters
 process.ntuples = cms.EDAnalyzer('Pi0Tuplizer',
 FillL1SeedFinalDecision = cms.untracked.bool(True),
-uGtAlgInputTag = cms.untracked.InputTag('hltGtStage2Digis')
+uGtAlgInputTag = cms.untracked.InputTag('hltGtStage2Digis'),
+EBRecHitCollectionTag = cms.untracked.InputTag("ecalRecHit","EcalRecHitsEB","Pi0Tuplizer"),
+EERecHitCollectionTag = cms.untracked.InputTag("ecalRecHit","EcalRecHitsEE","Pi0Tuplizer"),
+ESRecHitCollectionTag = cms.untracked.InputTag("ecalPreshowerRecHit","EcalRecHitsES","Pi0Tuplizer"),
+PhotonOrderOption = cms.untracked.string("SeedEBased"),# "SeedEBased" (g1 is the one with larger seed Energy) or "PhoPtBased"(g1 is the one with larger pt)
+EB_Seed_E = cms.untracked.double(0.5),
+EE_Seed_E = cms.untracked.double(0.5),
+pi0PtCut_barrel1 = cms.untracked.double(2.6),
+pi0PtCut_barrel2 = cms.untracked.double(2.6),
+pi0PtCut_endcap1 = cms.untracked.double(3.0),
+pi0PtCut_endcap2 = cms.untracked.double(1.5),
+gPtCut_barrel1 = cms.untracked.double(1.3),
+gPtCut_barrel2 = cms.untracked.double(1.3),
+gPtCut_endcap1 = cms.untracked.double(0.95),
+gPtCut_endcap2 = cms.untracked.double(0.65),
+s4s9Cut_barrel1 = cms.untracked.double(0.83),
+s4s9Cut_barrel2 = cms.untracked.double(0.83),
+s4s9Cut_endcap1 = cms.untracked.double(0.95),
+s4s9Cut_endcap2 = cms.untracked.double(0.95),
+nxtal1Cut_barrel1 = cms.untracked.double(0.),
+nxtal1Cut_barrel2 = cms.untracked.double(0.),
+nxtal1Cut_endcap1 = cms.untracked.double(0.),
+nxtal1Cut_endcap2 = cms.untracked.double(0.),
+nxtal2Cut_barrel1 = cms.untracked.double(0.),
+nxtal2Cut_barrel2 = cms.untracked.double(0.),
+nxtal2Cut_endcap1 = cms.untracked.double(0.),
+nxtal2Cut_endcap2 = cms.untracked.double(0.)
 )
+
+#########################paratmeters for the tuplizer##############################
+if isMC_:
+        process.ntuples.isMC = cms.untracked.bool(True)
+else:
+        process.ntuples.isMC = cms.untracked.bool(False)
+if isPi0_:
+        process.ntuples.isPi0 = cms.untracked.bool(True)
+else:
+        process.ntuples.isPi0 = cms.untracked.bool(False)
+if FillL1SeedFinalDecision_:
+        process.ntuples.FillL1SeedFinalDecision = cms.untracked.bool(True)
+else:
+        process.ntuples.FillL1SeedFinalDecision = cms.untracked.bool(False)
+if FillDiPhotonNtuple_:
+        process.ntuples.FillDiPhotonNtuple = cms.untracked.bool(True)
+else:
+        process.ntuples.FillDiPhotonNtuple = cms.untracked.bool(False)
+if FillPhotonNtuple_:
+        process.ntuples.FillPhotonNtuple = cms.untracked.bool(True)
+else:
+        process.ntuples.FillPhotonNtuple = cms.untracked.bool(False)
 
 #define path
 process.p = cms.Path()
