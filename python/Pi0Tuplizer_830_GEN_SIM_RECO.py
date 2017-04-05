@@ -40,7 +40,7 @@ process.options = cms.untracked.PSet(
 #load input file
 process.source = cms.Source('PoolSource',
     fileNames = cms.untracked.vstring(
-        '/store/mc/PhaseIFall16DR/SingleEta_FlatPt-1To15/GEN-SIM-RECO/FlatPU10to50RECO_90X_upgrade2017_realistic_v6_C1-v1/50000/00079B3C-D913-E711-AC0D-FA163EF1554A.root'
+        '/store/mc/PhaseIFall16DR/SinglePion_FlatPt-1To15/GEN-SIM-RECO/FlatPU10to50RECO_90X_upgrade2017_realistic_v6_C1-v1/510000/42C9D4EC-A413-E711-8E3B-FA163E66742D.root'
     )
 )
 
