@@ -40,7 +40,7 @@ process.options = cms.untracked.PSet(
 #load input file
 process.source = cms.Source('PoolSource',
     fileNames = cms.untracked.vstring(
-        'root://cmsxrootd.fnal.gov//store/mc/PhaseIFall16DR/QCD_Pt-15to20_EMEnriched_TuneCUETP8M1_13TeV_pythia8/GEN-SIM-RAW/FlatPU28to62HcalNZSRAW_81X_upgrade2017_realistic_v26-v1/100000/002CF4F7-A4F0-E611-8C1F-141877411EA2.root'
+        '/store/mc/PhaseIFall16DR/SinglePion_FlatPt-1To15/GEN-SIM-RECO/FlatPU10to50RECO_90X_upgrade2017_realistic_v6_C1-v1/510000/42C9D4EC-A413-E711-8E3B-FA163E66742D.root'
     )
 )
 
@@ -54,9 +54,9 @@ process.TFileService = cms.Service("TFileService",
 process.ntuples = cms.EDAnalyzer('Pi0Tuplizer',
 FillL1SeedFinalDecision = cms.untracked.bool(True),
 uGtAlgInputTag = cms.untracked.InputTag('hltGtStage2Digis'),
-EBRecHitCollectionTag = cms.untracked.InputTag("ecalRecHit","EcalRecHitsEB","Pi0Tuplizer"),
-EERecHitCollectionTag = cms.untracked.InputTag("ecalRecHit","EcalRecHitsEE","Pi0Tuplizer"),
-ESRecHitCollectionTag = cms.untracked.InputTag("ecalPreshowerRecHit","EcalRecHitsES","Pi0Tuplizer"),
+EBRecHitCollectionTag = cms.untracked.InputTag("ecalRecHit","EcalRecHitsEB","RECO"),
+EERecHitCollectionTag = cms.untracked.InputTag("ecalRecHit","EcalRecHitsEE","RECO"),
+ESRecHitCollectionTag = cms.untracked.InputTag("ecalPreshowerRecHit","EcalRecHitsES","RECO"),
 PhotonOrderOption = cms.untracked.string("SeedEBased"),# "SeedEBased" (g1 is the one with larger seed Energy) or "PhoPtBased"(g1 is the one with larger pt)
 EB_Seed_E = cms.untracked.double(0.5),
 EE_Seed_E = cms.untracked.double(0.5),
@@ -106,6 +106,6 @@ else:
 
 #define path
 process.p = cms.Path()
-process.p *= process.ecalDigis*process.ecalPreshowerDigis
-process.p *= process.bunchSpacingProducer*process.ecalLocalRecoSequence
+#process.p *= process.ecalDigis*process.ecalPreshowerDigis
+#process.p *= process.bunchSpacingProducer*process.ecalLocalRecoSequence
 process.p *= process.ntuples
