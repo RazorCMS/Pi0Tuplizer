@@ -14,7 +14,7 @@ void timeCalibTag(std::string input_list="list_EcalTimeCalibConstants_Legacy2016
 {
 
 	TFile *outfile = new TFile(outfileName.c_str(),"RECREATE");
-	TTree *outTree = new TTree("pedestal", "pedestals for different IOVs");
+	TTree *outTree = new TTree("timeCalib", "timeCalibs for different IOVs");
 
 	uint start_run;
 	uint end_run;
@@ -100,5 +100,5 @@ void timeCalibTag(std::string input_list="list_EcalTimeCalibConstants_Legacy2016
 	outTree->Fill();
 	}	
 	outTree->Write();
-
+	outfile->Close();
 }
