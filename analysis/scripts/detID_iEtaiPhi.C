@@ -61,8 +61,9 @@ void  detID_iEtaiPhi()
 {
 	//EB test
 	cout<<"EB test..."<<endl;	
-	for(int ieta=-85;ieta<=85 && ieta!=0;ieta++)
-	{	
+	for(int ieta=-85;ieta<=85;ieta++)
+	{
+		if(ieta ==0) continue;	
 		for(int iphi=1;iphi<=360;iphi++)
 		{
 			int detID = detID_from_iEtaiPhi(ieta, iphi, true, false);
