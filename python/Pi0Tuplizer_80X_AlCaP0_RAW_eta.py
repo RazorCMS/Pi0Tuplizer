@@ -55,7 +55,8 @@ process.TFileService = cms.Service("TFileService",
     fileName = cms.string("pi0Ntuple.root"),
     closeFileFast = cms.untracked.bool(True)
 )
-if not isPi0_:
+
+if isPi0_==False:
 	process.TFileService.fileName = cms.string("etaNtuple.root")
 
 #########################paratmeters for the tuplizer##############################
@@ -63,6 +64,7 @@ process.ntuples = cms.EDAnalyzer('Pi0Tuplizer',
 uGtAlgInputTag = cms.untracked.InputTag('hltGtStage2Digis'),
 EBRecHitCollectionTag = cms.untracked.InputTag("ecalRecHit","EcalRecHitsEB","Pi0Tuplizer"),
 EERecHitCollectionTag = cms.untracked.InputTag("ecalRecHit","EcalRecHitsEE","Pi0Tuplizer"),
+#ESRecHitCollectionTag = cms.untracked.InputTag("hltAlCaPi0RecHitsFilterEEonlyRegional", "pi0EcalRecHitsES"),
 ESRecHitCollectionTag = cms.untracked.InputTag('dummyHits','dummyPreshowerRechits',"Pi0Tuplizer"),
 PhotonOrderOption = cms.untracked.string("SeedEBased"),# "SeedEBased" (g1 is the one with larger seed Energy) or "PhoPtBased"(g1 is the one with larger pt)
 EB_Seed_E = cms.untracked.double(0.0),#(0.5),
@@ -88,6 +90,9 @@ nxtal2Cut_barrel2 = cms.untracked.double(0.),
 nxtal2Cut_endcap1 = cms.untracked.double(0.),
 nxtal2Cut_endcap2 = cms.untracked.double(0.)
 )
+
+#if isPi0_==False:
+#	process.ntuples.ESRecHitCollectionTag = cms.untracked.InputTag("hltAlCaEtaRecHitsFilterEEonlyRegional", "etaEcalRecHitsES")
 #########################paratmeters for the tuplizer##############################
 if isMC_:
 	process.ntuples.isMC = cms.untracked.bool(True)
@@ -125,33 +130,33 @@ process.dummyHits = cms.EDProducer('DummyRechitDigis',
                                      endcapDigis            = cms.InputTag("hltAlCaPi0EERechitsToDigis","pi0EEDigis"),
                                      barrelDigiCollection   = cms.untracked.string('dummyBarrelDigis'),
                                      endcapDigiCollection   = cms.untracked.string('dummyEndcapDigis'))
-if not isPi0_:
-	process.dummyHits.preshowerHitProducer      = cms.InputTag("hltAlCaEtaRecHitsFilterEEonlyRegional", "etaEcalRecHitsES")
+if isPi0_==False:
+        process.dummyHits.preshowerHitProducer      = cms.InputTag("hltAlCaEtaRecHitsFilterEEonlyRegional", "etaEcalRecHitsES")
 
-#DUMMY DIGI
-process.dummyDigi = cms.EDProducer('DummyRechitDigis',
+#DUMMY DIGIS
+process.dummyDigis = cms.EDProducer('DummyRechitDigis',
                                      doDigi = cms.untracked.bool(True),
                                      # rechits
-                                     barrelHitProducer      = cms.InputTag('',''),
-                                     endcapHitProducer      = cms.InputTag('',''),
-                                     preshowerHitProducer      = cms.InputTag('',''),
+                                     barrelHitProducer      = cms.InputTag('hltAlCaPi0EBUncalibrator','pi0EcalRecHitsEB'),
+                                     endcapHitProducer      = cms.InputTag('hltAlCaPi0EEUncalibrator','pi0EcalRecHitsEE'),
+				     preshowerHitProducer      = cms.InputTag('',''),
                                      barrelRecHitCollection = cms.untracked.string('dummyBarrelRechits'),
                                      endcapRecHitCollection = cms.untracked.string('dummyEndcapRechits'),
-                                     preshowerRecHitCollection = cms.untracked.string('dummyPreshowerRechits'),
+				     preshowerRecHitCollection = cms.untracked.string('dummyPreshowerRechits'),
                                      # digis
                                      barrelDigis            = cms.InputTag("hltAlCaPi0EBRechitsToDigis","pi0EBDigis"),
                                      endcapDigis            = cms.InputTag("hltAlCaPi0EERechitsToDigis","pi0EEDigis"),
                                      barrelDigiCollection   = cms.untracked.string('dummyBarrelDigis'),
                                      endcapDigiCollection   = cms.untracked.string('dummyEndcapDigis'))
-if not isPi0_:
-	process.dummyDigi.barrelDigis            = cms.InputTag("hltAlCaEtaEBRechitsToDigis","etaEBDigis")
-	process.dummyDigi.barrelDigis            = cms.InputTag("hltAlCaEtaEERechitsToDigis","etaEEDigis")
 
+if isPi0_==False:
+	process.dummyDigis.barrelDigis = cms.InputTag("hltAlCaEtaEBRechitsToDigis","etaEBDigis")
+	process.dummyDigis.endcapDigis = cms.InputTag("hltAlCaEtaEERechitsToDigis","etaEEDigis")
 #DIGI to UNCALIB
 import RecoLocalCalo.EcalRecProducers.ecalMultiFitUncalibRecHit_cfi
 process.ecalMultiFitUncalibRecHit = RecoLocalCalo.EcalRecProducers.ecalMultiFitUncalibRecHit_cfi.ecalMultiFitUncalibRecHit.clone()
-process.ecalMultiFitUncalibRecHit.EBdigiCollection = cms.InputTag('dummyDigi','dummyBarrelDigis','Pi0Tuplizer')
-process.ecalMultiFitUncalibRecHit.EEdigiCollection = cms.InputTag('dummyDigi','dummyEndcapDigis','Pi0Tuplizer')
+process.ecalMultiFitUncalibRecHit.EBdigiCollection = cms.InputTag('dummyDigis','dummyBarrelDigis','Pi0Tuplizer')
+process.ecalMultiFitUncalibRecHit.EEdigiCollection = cms.InputTag('dummyDigis','dummyEndcapDigis','Pi0Tuplizer')
 process.ecalMultiFitUncalibRecHit.algoPSet.useLumiInfoRunHeader = cms.bool( False )
 
 #UNCALIB to CALIB
@@ -168,10 +173,10 @@ process.ecalLocalRecoSequence = cms.Sequence(ecalRecHit)
 
 #define path
 process.p = cms.Path()
-process.p *= process.dummyHits
-process.p *= process.dummyDigi
+process.p *= process.dummyDigis
 process.p *= process.ecalMultiFitUncalibRecHit
 process.p *= process.ecalLocalRecoSequence
+process.p *= process.dummyHits
 process.p *= process.ntuples
 
 #process.end = cms.EndPath(process.Out)
