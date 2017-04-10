@@ -52,8 +52,10 @@ private:
   // ----------member data ---------------------------
   edm::InputTag tag_barrelHitProducer_;
   edm::InputTag tag_endcapHitProducer_;
+  edm::InputTag tag_preshowerHitProducer_;
   const std::string barrelRecHitCollection_;
   const std::string endcapRecHitCollection_;
+  const std::string preshowerRecHitCollection_;
   edm::InputTag tag_barrelDigiProducer_;
   edm::InputTag tag_endcapDigiProducer_;
   const std::string barrelDigiCollection_;
@@ -64,8 +66,10 @@ private:
 DummyRechitDigis::DummyRechitDigis(const edm::ParameterSet& iConfig):
   tag_barrelHitProducer_       (iConfig.getParameter< edm::InputTag > ("barrelHitProducer")),
   tag_endcapHitProducer_       (iConfig.getParameter< edm::InputTag > ("endcapHitProducer")),
+  tag_preshowerHitProducer_       (iConfig.getParameter< edm::InputTag > ("preshowerHitProducer")),
   barrelRecHitCollection_  (iConfig.getUntrackedParameter<std::string>("barrelRecHitCollection")),
   endcapRecHitCollection_  (iConfig.getUntrackedParameter<std::string>("endcapRecHitCollection")),
+  preshowerRecHitCollection_  (iConfig.getUntrackedParameter<std::string>("preshowerRecHitCollection")),
   tag_barrelDigiProducer_      (iConfig.getParameter< edm::InputTag > ("barrelDigis")),
   tag_endcapDigiProducer_      (iConfig.getParameter< edm::InputTag > ("endcapDigis")),
   barrelDigiCollection_ (iConfig.getUntrackedParameter<std::string>("barrelDigiCollection")),
@@ -77,8 +81,9 @@ DummyRechitDigis::DummyRechitDigis(const edm::ParameterSet& iConfig):
     produces< EEDigiCollection >(endcapDigiCollection_);
   }
   else {
-    produces< EcalRecHitCollection >(barrelRecHitCollection_);
-    produces< EcalRecHitCollection >(endcapRecHitCollection_);
+    if(tag_barrelHitProducer_.label() !="") produces< EcalRecHitCollection >(barrelRecHitCollection_);
+    if(tag_endcapHitProducer_.label() !="") produces< EcalRecHitCollection >(endcapRecHitCollection_);
+    if(tag_preshowerHitProducer_.label() !="") produces< EcalRecHitCollection >(preshowerRecHitCollection_);
   }
 }
 
@@ -93,9 +98,11 @@ void DummyRechitDigis::produce(edm::Event& iEvent, const edm::EventSetup& iSetup
    // handle to try to fill
    edm::Handle<EcalRecHitCollection> barrelRecHitsHandle;
    edm::Handle<EcalRecHitCollection> endcapRecHitsHandle;
+   edm::Handle<EcalRecHitCollection> preshowerRecHitsHandle;
    // dummy collection to Put()
    std::unique_ptr< EcalRecHitCollection > rechits_temp( new EcalRecHitCollection);
    std::unique_ptr< EcalRecHitCollection > rechits_temp2( new EcalRecHitCollection);
+   std::unique_ptr< EcalRecHitCollection > rechits_temp3( new EcalRecHitCollection);
 
    //   EcalRecHit::EcalRecHit(const DetId& id, float energy, float time, uint32_t flags, uint32_t flagBits)
    // add one rechit
@@ -104,9 +111,11 @@ void DummyRechitDigis::produce(edm::Event& iEvent, const edm::EventSetup& iSetup
    zero_collection.push_back(zero_rechit);
    *rechits_temp  = zero_collection;
    *rechits_temp2 = zero_collection;
+   *rechits_temp3 = zero_collection;
 
    std::unique_ptr< EcalRecHitCollection > rechits_eb( new EcalRecHitCollection);
    std::unique_ptr< EcalRecHitCollection > rechits_ee( new EcalRecHitCollection);
+   std::unique_ptr< EcalRecHitCollection > rechits_es( new EcalRecHitCollection);
 
    // fake digis
    // handle to try to fill
@@ -132,8 +141,11 @@ void DummyRechitDigis::produce(edm::Event& iEvent, const edm::EventSetup& iSetup
    if(!doDigi_) { 
      bool foundEBRechit = true;
      bool foundEERechit = true;
+     bool foundESRechit = true;
 
      // if you dont find the barrel rechits youre looking for, put in a fake one
+     if(tag_barrelHitProducer_.label() !="")
+     {
      try { 
        iEvent.getByLabel(tag_barrelHitProducer_, barrelRecHitsHandle);
        *rechits_eb = *(barrelRecHitsHandle.product());       
@@ -141,8 +153,11 @@ void DummyRechitDigis::produce(edm::Event& iEvent, const edm::EventSetup& iSetup
      catch(cms::Exception& ex) { foundEBRechit = rechits_eb->size() > 0;}     
      // if you found the collection put it back into the event
      iEvent.put( foundEBRechit ? std::move(rechits_eb) : std::move(rechits_temp), barrelRecHitCollection_);
-     
+     }
+
      // if you dont find the endcap rechits youre looking for, put in a fake one
+     if(tag_endcapHitProducer_.label() !="")
+     {
      try {
        iEvent.getByLabel(tag_endcapHitProducer_, endcapRecHitsHandle);
        *rechits_ee = *(endcapRecHitsHandle.product());
@@ -151,6 +166,20 @@ void DummyRechitDigis::produce(edm::Event& iEvent, const edm::EventSetup& iSetup
      } 
 
      iEvent.put( foundEERechit ? std::move(rechits_ee) : std::move(rechits_temp2), endcapRecHitCollection_);
+     }
+     // if you dont find the preshower rechits youre looking for, put in a fake one
+     if(tag_preshowerHitProducer_.label() !="")
+     {
+     try {
+       iEvent.getByLabel(tag_preshowerHitProducer_, preshowerRecHitsHandle);
+       *rechits_es = *(preshowerRecHitsHandle.product());
+     } 
+     catch (cms::Exception& ex){ foundESRechit = rechits_es->size() > 0;
+     } 
+
+     iEvent.put( foundESRechit ? std::move(rechits_es) : std::move(rechits_temp3), preshowerRecHitCollection_);
+     }
+
    } // end dummy rechits
    
    // Build fake digi collections
@@ -158,6 +187,8 @@ void DummyRechitDigis::produce(edm::Event& iEvent, const edm::EventSetup& iSetup
      bool foundEBDigi = true;
      bool foundEEDigi = true;
 
+     if(tag_barrelDigiProducer_.label() !="")
+     {
      try { // barrel digis
        iEvent.getByLabel(tag_barrelDigiProducer_, digisEBHandle);
        *outputEBDigiCollection = *(digisEBHandle.product());
@@ -168,7 +199,10 @@ void DummyRechitDigis::produce(edm::Event& iEvent, const edm::EventSetup& iSetup
 
      // insert the EB collection
      iEvent.put(foundEBDigi ? std::move(outputEBDigiCollection) : std::move(fakeEBDigiCollection), barrelDigiCollection_);
+     }
 
+     if(tag_endcapDigiProducer_.label() !="")
+     {
      try { // endcap digis
        iEvent.getByLabel(tag_endcapDigiProducer_, digisEEHandle);
        *outputEEDigiCollection = *(digisEEHandle.product());
@@ -178,7 +212,7 @@ void DummyRechitDigis::produce(edm::Event& iEvent, const edm::EventSetup& iSetup
      }
      //     std::cout << "Putting Real EE collection?  " << foundEEDigi <<  std::endl;
      iEvent.put(foundEEDigi ? std::move(outputEEDigiCollection) : std::move(fakeEEDigiCollection), endcapDigiCollection_);
-     
+     } 
    }
    //std::cout << "-----------End Dummy Rechits ---------- " << std::endl;
 }

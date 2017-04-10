@@ -130,6 +130,12 @@ private:
 	vector<int> * L1SeedBitFinalDecision;
 
 	int 	N_Pi0_rec;
+	int 	N_Pho_rec;
+	int 	N_ebPho_rec;
+	int 	N_eePho_rec;
+	int 	N_ebRecHit;
+	int 	N_eeRecHit;
+	int 	N_esRecHit;
 	float 	mPi0_rec[NPI0MAX];	
 	float 	ptPi0_rec[NPI0MAX];	
 	float 	etaPi0_rec[NPI0MAX];	
@@ -164,6 +170,7 @@ private:
 
  //variables to be saved in the photon ntuple
 	float pho_E;	
+	float pho_seedE;	
 	float pho_Eta;	
 	int pho_iEta;	
 	int pho_iX;	
@@ -220,6 +227,10 @@ private:
 	edm::Handle<EBRecHitCollection> ebRecHit;
       	edm::Handle<EBRecHitCollection> eeRecHit;
       	edm::Handle<ESRecHitCollection> esRecHit;
+	
+	bool foundEB;
+	bool foundEE;
+	bool foundES;
 
 //cuts and options read from cfg file	
  	bool isMC_;

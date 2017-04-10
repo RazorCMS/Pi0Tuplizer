@@ -106,15 +106,19 @@ void Pi0Tuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 
 //call specific functions
 	if(FillL1SeedFinalDecision_) GetL1SeedBit();
-	recoPhoCluster_EB();//reconstruct photon clusters in EB
+	if(foundEB) recoPhoCluster_EB();//reconstruct photon clusters in EB
 	resetPhoBranches();
-	recoPhoCluster_EE();//reconstruct photon clusters in EE
+	if(foundEE) recoPhoCluster_EE();//reconstruct photon clusters in EE
 
 	if(FillDiPhotonNtuple_) recoDiPhoEvents_EB();//reconstruct pi0/eta events from the photon clusters in EB
 	if(FillDiPhotonNtuple_) recoDiPhoEvents_EE();//reconstruct pi0/eta events from the photon clusters in EE
 	
 //fill ntuple
-	if(FillDiPhotonNtuple_ && N_Pi0_rec > 0) Pi0Events->Fill();
+#ifdef DEBUG
+//	cout<<"N_Pho: "<<N_Pho_rec<<"  N_ebRecHit: "<<N_ebRecHit<<"   N_eeRecHit:  "<<N_eeRecHit<<endl;
+#endif
+	//if(FillDiPhotonNtuple_ && N_Pi0_rec > 0) Pi0Events->Fill();
+	Pi0Events->Fill();
 
 }
 
@@ -123,12 +127,14 @@ void Pi0Tuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 void Pi0Tuplizer::recoPhoCluster_EB()
 {
 	std::vector<EcalRecHit> ebseeds;
+
 	for(EBRecHitCollection::const_iterator itb= ebRecHit->begin(); itb != ebRecHit->end(); ++itb)
 	{
 		if(itb->energy() > EB_Seed_E_)  ebseeds.push_back( *itb );	
 	}
 	
-	if(ebseeds.size() < 2) return;
+	//if(ebseeds.size() < 2) return;
+	
 	
 	sort(ebseeds.begin(), ebseeds.end(), ecalRecHitLess());	
 	//make photon clusters
@@ -252,6 +258,7 @@ void Pi0Tuplizer::recoPhoCluster_EB()
 
 		//fill photon cluster
 		pho_E = e3x3;
+		pho_seedE = maxEne;
 		pho_Eta = clusPos.eta();
 		pho_iEta = seed_id.ieta();
 		pho_Phi = clusPos.phi();
@@ -267,6 +274,8 @@ void Pi0Tuplizer::recoPhoCluster_EB()
 		pho_y = clusPos.y();
 		pho_z = clusPos.z();
 		if(FillPhotonNtuple_ ) PhoEvents->Fill();
+		N_Pho_rec ++;
+		N_ebPho_rec ++;
 		
 	}//end loop of all seed xtals	
 	
@@ -276,12 +285,14 @@ void Pi0Tuplizer::recoPhoCluster_EE()
 {
 
 	std::vector<EcalRecHit> eeseends;
+
 	for(EERecHitCollection::const_iterator itb= eeRecHit->begin(); itb != eeRecHit->end(); ++itb)
 	{
 		if(itb->energy() > EE_Seed_E_)  eeseends.push_back( *itb );	
 	}
 	
-	if(eeseends.size() < 2) return;
+	//if(eeseends.size() < 2) return;
+	
 	
 	sort(eeseends.begin(), eeseends.end(), ecalRecHitLess());	
 	//make photon clusters
@@ -406,6 +417,7 @@ void Pi0Tuplizer::recoPhoCluster_EE()
 
 		//fill photon cluster
 		pho_E = e3x3;
+		pho_seedE = maxEne;
 		pho_Eta = clusPos.eta();
 		pho_iX = seed_id.ix();
 		pho_Phi = clusPos.phi();
@@ -421,6 +433,8 @@ void Pi0Tuplizer::recoPhoCluster_EE()
 		pho_y = clusPos.y();
 		pho_z = clusPos.z();
 		if(FillPhotonNtuple_ ) PhoEvents->Fill();
+		N_Pho_rec ++;
+		N_eePho_rec ++;
 		
 	}//end loop of all seed xtals	
 	
@@ -716,9 +730,41 @@ void Pi0Tuplizer::loadEvent(const edm::Event& iEvent, const edm::EventSetup& iSe
 	eeS1S9.clear();
 
 	if(FillL1SeedFinalDecision_) iEvent.getByToken(uGtAlgToken_,uGtAlg);	
-	iEvent.getByToken ( EBRecHitCollectionToken_, ebRecHit);
-  	iEvent.getByToken ( EERecHitCollectionToken_, eeRecHit);
-  	iEvent.getByToken ( ESRecHitCollectionToken_, esRecHit);
+	
+	foundEB = true;
+	foundEE = true;
+	foundES = true;
+
+	try
+	{
+		iEvent.getByToken ( EBRecHitCollectionToken_, ebRecHit);
+	}
+	catch (cms::Exception& ex)
+	{
+		foundEB = ebRecHit->size() > 0;
+	}
+
+	try
+	{
+		iEvent.getByToken ( EERecHitCollectionToken_, eeRecHit);
+	}
+	catch (cms::Exception& ex)
+	{
+		foundEE = esRecHit->size() > 0;
+	}
+
+	try
+	{
+		iEvent.getByToken ( ESRecHitCollectionToken_, esRecHit);
+	}
+	catch (cms::Exception& ex)
+	{
+		foundES = esRecHit->size() > 0;
+	}
+	
+	if(foundEB) N_ebRecHit = ebRecHit->size();
+	if(foundEE) N_eeRecHit = eeRecHit->size();
+	if(foundES) N_esRecHit = esRecHit->size();
 	
 	edm::ESHandle<CaloGeometry> geoHandle;
   	iSetup.get<CaloGeometryRecord>().get(geoHandle);
@@ -772,6 +818,12 @@ void Pi0Tuplizer::setBranches()
   	Pi0Events->Branch( "allL1SeedFinalDecision", allL1SeedFinalDecision, "allL1SeedFinalDecision[300]/O");
 	Pi0Events->Branch("L1SeedBitFinalDecision", "vector<int>", &L1SeedBitFinalDecision);
 
+	Pi0Events->Branch( "N_ebRecHit", &N_ebRecHit, "N_ebRecHit/I");
+	Pi0Events->Branch( "N_eeRecHit", &N_eeRecHit, "N_eeRecHit/I");
+	Pi0Events->Branch( "N_esRecHit", &N_esRecHit, "N_esRecHit/I");
+	Pi0Events->Branch( "N_Pho_rec", &N_Pho_rec, "N_Pho_rec/I");
+	Pi0Events->Branch( "N_ebPho_rec", &N_ebPho_rec, "N_ebPho_rec/I");
+	Pi0Events->Branch( "N_eePho_rec", &N_eePho_rec, "N_eePho_rec/I");
 	Pi0Events->Branch( "N_Pi0_rec", &N_Pi0_rec, "N_Pi0_rec/I");
 	Pi0Events->Branch( "mPi0_rec", mPi0_rec, "mPi0_rec[N_Pi0_rec]/F");		
 	Pi0Events->Branch( "ptPi0_rec", ptPi0_rec, "ptPi0_rec[N_Pi0_rec]/F");		
@@ -810,6 +862,7 @@ void Pi0Tuplizer::setBranches()
   	PhoEvents->Branch("eventNum", &eventNum, "eventNum/i");
   	PhoEvents->Branch("eventTime", &eventTime, "eventTime/i");
   	PhoEvents->Branch("pho_E", &pho_E, "pho_E/F");
+  	PhoEvents->Branch("pho_seedE", &pho_seedE, "pho_seedE/F");
   	PhoEvents->Branch("pho_Eta", &pho_Eta, "pho_Eta/F");
   	PhoEvents->Branch("pho_iEta", &pho_iEta, "pho_iEta/I");
   	PhoEvents->Branch("pho_iX", &pho_iX, "pho_iX/I");
@@ -842,6 +895,12 @@ void Pi0Tuplizer::resetBranches()
 	}	
 	L1SeedBitFinalDecision->clear();
 	N_Pi0_rec = 0;
+	N_Pho_rec = 0;
+	N_ebPho_rec = 0;
+	N_eePho_rec = 0;
+	N_ebRecHit = 0;
+	N_eeRecHit = 0;
+	N_esRecHit = 0;
 	for(int i=0;i<NPI0MAX;i++)
 	{
 		mPi0_rec[i] = 0;
@@ -878,6 +937,7 @@ void Pi0Tuplizer::resetBranches()
 	}
 
 	pho_E=0;
+	pho_seedE=0;
 	pho_Eta=0;
 	pho_iEta=-999;
 	pho_iX=-999;
@@ -899,6 +959,7 @@ void Pi0Tuplizer::resetBranches()
 void Pi0Tuplizer::resetPhoBranches()
 {
 	pho_E=0;
+	pho_seedE=0;
         pho_Eta=0;
         pho_iEta=-999;
         pho_iX=-999;
