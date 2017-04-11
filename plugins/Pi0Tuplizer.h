@@ -101,15 +101,17 @@ private:
    
  //specific functions 
    	void loadEvent(const edm::Event& iEvent, const edm::EventSetup& iSetup); //call at the beginning of each event to get input handles from the python config
+   	void loadEvent_Pi0(const edm::Event& iEvent, const edm::EventSetup& iSetup); //call at the beginning of each event to get input handles from the python config
+   	void loadEvent_Eta(const edm::Event& iEvent, const edm::EventSetup& iSetup); //call at the beginning of each event to get input handles from the python config
 	virtual void resetBranches(); // clear all variables
 	virtual void resetPhoBranches(); // clear all variables in PhoEvents tree
    	virtual void setBranches(); // set branch of ntuple
 	void GetL1SeedBit();
-	void recoPhoCluster_EB();
-	void recoPhoCluster_EE();
+	void recoPhoCluster_EB(bool isPi0_);
+	void recoPhoCluster_EE(bool isPi0_);
 
-	void recoDiPhoEvents_EB();
-	void recoDiPhoEvents_EE();
+	void recoDiPhoEvents_EB(bool isPi0_);
+	void recoDiPhoEvents_EE(bool isPi0_);
 	
 	int diff_neta_s(int neta1, int neta2);	
 	int diff_nphi_s(int nphi1, int nphi2);	
@@ -129,13 +131,38 @@ private:
 	bool    allL1SeedFinalDecision[NL1SEED];
 	vector<int> * L1SeedBitFinalDecision;
 
-	int 	N_Pi0_rec;
+	int 	N_Pair_rec;
+	int 	N_ebPair_rec;
+	int 	N_eePair_rec;
 	int 	N_Pho_rec;
 	int 	N_ebPho_rec;
 	int 	N_eePho_rec;
 	int 	N_ebRecHit;
 	int 	N_eeRecHit;
 	int 	N_esRecHit;
+
+	int 	N_Pi0_rec;
+	int 	N_ebPi0_rec;
+	int 	N_eePi0_rec;
+	int 	N_Pho_rec_Pi0_;
+	int 	N_ebPho_rec_Pi0_;
+	int 	N_eePho_rec_Pi0_;
+	int 	N_ebRecHit_Pi0_;
+	int 	N_eeRecHit_Pi0_;
+	int 	N_esRecHit_Pi0_;
+	
+	int 	N_Eta_rec;
+	int 	N_ebEta_rec;
+	int 	N_eeEta_rec;
+	int 	N_Pho_rec_Eta_;
+	int 	N_ebPho_rec_Eta_;
+	int 	N_eePho_rec_Eta_;
+	int 	N_ebRecHit_Eta_;
+	int 	N_eeRecHit_Eta_;
+	int 	N_esRecHit_Eta_;
+
+
+	bool 	fromPi0[NPI0MAX];	
 	float 	mPi0_rec[NPI0MAX];	
 	float 	ptPi0_rec[NPI0MAX];	
 	float 	etaPi0_rec[NPI0MAX];	
@@ -189,24 +216,37 @@ private:
 	float pho_z;
 		
  //reconstructed variables shared for each event
- 	std::vector< CaloCluster > ebclusters;
-	std::vector< CaloCluster > eeclusters;
+ 	std::vector< CaloCluster > ebclusters_Pi0_;
+ 	std::vector< CaloCluster > ebclusters_Eta_;
+	std::vector< CaloCluster > eeclusters_Pi0_;
+	std::vector< CaloCluster > eeclusters_Eta_;
 	
 	CaloTopology *ebtopology_;
       	CaloTopology *eetopology_;
       	CaloSubdetectorTopology *estopology_;
 	const CaloGeometry* geometry;
 
-	vector<float>  ebSeedTime;
-	vector<float>  eeSeedTime;
-	std::vector<int> ebNxtal;
-	std::vector<int> eeNxtal;
-	vector<float>  ebS4S9;
-	vector<float>  eeS4S9;
-	vector<float>  ebS2S9;
-	vector<float>  eeS2S9;
-	vector<float>  ebS1S9;
-	vector<float>  eeS1S9;
+	vector<float>  ebSeedTime_Pi0_;
+	vector<float>  eeSeedTime_Pi0_;
+	std::vector<int> ebNxtal_Pi0_;
+	std::vector<int> eeNxtal_Pi0_;
+	vector<float>  ebS4S9_Pi0_;
+	vector<float>  eeS4S9_Pi0_;
+	vector<float>  ebS2S9_Pi0_;
+	vector<float>  eeS2S9_Pi0_;
+	vector<float>  ebS1S9_Pi0_;
+	vector<float>  eeS1S9_Pi0_;
+
+	vector<float>  ebSeedTime_Eta_;
+	vector<float>  eeSeedTime_Eta_;
+	std::vector<int> ebNxtal_Eta_;
+	std::vector<int> eeNxtal_Eta_;
+	vector<float>  ebS4S9_Eta_;
+	vector<float>  eeS4S9_Eta_;
+	vector<float>  ebS2S9_Eta_;
+	vector<float>  eeS2S9_Eta_;
+	vector<float>  ebS1S9_Eta_;
+	vector<float>  eeS1S9_Eta_;
 
 	PosCalcParams PCparams_ = {
 				true,//param_LogWeighted_
@@ -221,9 +261,14 @@ private:
  	edm::EDGetTokenT<BXVector<GlobalAlgBlk>> uGtAlgToken_;
 	edm::Handle<BXVector<GlobalAlgBlk>> uGtAlg;
 
-	edm::EDGetTokenT<EBRecHitCollection> EBRecHitCollectionToken_;
-      	edm::EDGetTokenT<EERecHitCollection> EERecHitCollectionToken_;
-      	edm::EDGetTokenT<ESRecHitCollection> ESRecHitCollectionToken_;
+	edm::EDGetTokenT<EBRecHitCollection> EBRecHitCollectionToken_Pi0_;
+      	edm::EDGetTokenT<EERecHitCollection> EERecHitCollectionToken_Pi0_;
+      	edm::EDGetTokenT<ESRecHitCollection> ESRecHitCollectionToken_Pi0_;
+	
+	edm::EDGetTokenT<EBRecHitCollection> EBRecHitCollectionToken_Eta_;
+      	edm::EDGetTokenT<EERecHitCollection> EERecHitCollectionToken_Eta_;
+      	edm::EDGetTokenT<ESRecHitCollection> ESRecHitCollectionToken_Eta_;
+
 	edm::Handle<EBRecHitCollection> ebRecHit;
       	edm::Handle<EBRecHitCollection> eeRecHit;
       	edm::Handle<ESRecHitCollection> esRecHit;
@@ -234,7 +279,7 @@ private:
 
 //cuts and options read from cfg file	
  	bool isMC_;
-	bool isPi0_;
+	//bool isPi0_;
 	bool FillL1SeedFinalDecision_;
 	bool FillDiPhotonNtuple_;
 	bool FillPhotonNtuple_;

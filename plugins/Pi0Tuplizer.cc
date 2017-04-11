@@ -28,16 +28,28 @@ Pi0Tuplizer::Pi0Tuplizer(const edm::ParameterSet& iConfig)
 {
 	//get parameters from iConfig
 	isMC_	= iConfig.getUntrackedParameter<bool>("isMC",false);
-	isPi0_	= iConfig.getUntrackedParameter<bool>("isPi0",false);
+	//isPi0_	= iConfig.getUntrackedParameter<bool>("isPi0",false);
 	FillL1SeedFinalDecision_	= iConfig.getUntrackedParameter<bool>("FillL1SeedFinalDecision",false);
 	FillDiPhotonNtuple_	= iConfig.getUntrackedParameter<bool>("FillDiPhotonNtuple",false);
 	FillPhotonNtuple_	= iConfig.getUntrackedParameter<bool>("FillPhotonNtuple",false);
 
         if(FillL1SeedFinalDecision_)   uGtAlgToken_ = consumes<BXVector<GlobalAlgBlk>>(iConfig.getUntrackedParameter<edm::InputTag>("uGtAlgInputTag"));	
+	
+	edm::InputTag tag_EBRecHit_Pi0_ = iConfig.getUntrackedParameter<edm::InputTag>("EBRecHitCollectionTag_Pi0");	
+	edm::InputTag tag_EERecHit_Pi0_ = iConfig.getUntrackedParameter<edm::InputTag>("EERecHitCollectionTag_Pi0");	
+	edm::InputTag tag_ESRecHit_Pi0_ = iConfig.getUntrackedParameter<edm::InputTag>("ESRecHitCollectionTag_Pi0");	
 
-	EBRecHitCollectionToken_      	= consumes<EBRecHitCollection>(iConfig.getUntrackedParameter<edm::InputTag>("EBRecHitCollectionTag"));
-    	EERecHitCollectionToken_      	= consumes<EERecHitCollection>(iConfig.getUntrackedParameter<edm::InputTag>("EERecHitCollectionTag"));
-    	ESRecHitCollectionToken_      	= consumes<ESRecHitCollection>(iConfig.getUntrackedParameter<edm::InputTag>("ESRecHitCollectionTag"));
+	EBRecHitCollectionToken_Pi0_    = consumes<EBRecHitCollection>(tag_EBRecHit_Pi0_);
+	EERecHitCollectionToken_Pi0_    = consumes<EERecHitCollection>(tag_EERecHit_Pi0_);
+	ESRecHitCollectionToken_Pi0_    = consumes<ESRecHitCollection>(tag_ESRecHit_Pi0_);
+
+	edm::InputTag tag_EBRecHit_Eta_ = iConfig.getUntrackedParameter<edm::InputTag>("EBRecHitCollectionTag_Eta");	
+	edm::InputTag tag_EERecHit_Eta_ = iConfig.getUntrackedParameter<edm::InputTag>("EERecHitCollectionTag_Eta");	
+	edm::InputTag tag_ESRecHit_Eta_ = iConfig.getUntrackedParameter<edm::InputTag>("ESRecHitCollectionTag_Eta");	
+
+	EBRecHitCollectionToken_Eta_    = consumes<EBRecHitCollection>(tag_EBRecHit_Eta_);
+	EERecHitCollectionToken_Eta_    = consumes<EERecHitCollection>(tag_EERecHit_Eta_);
+	ESRecHitCollectionToken_Eta_    = consumes<ESRecHitCollection>(tag_ESRecHit_Eta_);
 
 	PhotonOrderOption_		= iConfig.getUntrackedParameter<std::string>("PhotonOrderOption");
 	EB_Seed_E_ 			= iConfig.getUntrackedParameter<double>("EB_Seed_E",0.2);
@@ -76,6 +88,16 @@ Pi0Tuplizer::Pi0Tuplizer(const edm::ParameterSet& iConfig)
     	EcalEndcapHardcodedTopology* eeHTopology=new EcalEndcapHardcodedTopology();
     	eetopology_->setSubdetTopology(DetId::Ecal,EcalEndcap,eeHTopology);
 
+#ifdef DEBUG
+	cout<<"InputTag -- "<<endl;
+	cout<<"tag_EBRecHit_Pi0_ =  "<<tag_EBRecHit_Pi0_.label()<<", "<<tag_EBRecHit_Pi0_.instance()<<", "<<tag_EBRecHit_Pi0_.process()<<endl;
+	cout<<"tag_EERecHit_Pi0_ =  "<<tag_EERecHit_Pi0_.label()<<", "<<tag_EERecHit_Pi0_.instance()<<", "<<tag_EERecHit_Pi0_.process()<<endl;
+	cout<<"tag_ESRecHit_Pi0_ =  "<<tag_ESRecHit_Pi0_.label()<<", "<<tag_ESRecHit_Pi0_.instance()<<", "<<tag_ESRecHit_Pi0_.process()<<endl;
+	cout<<"tag_EBRecHit_Eta_ =  "<<tag_EBRecHit_Eta_.label()<<", "<<tag_EBRecHit_Eta_.instance()<<", "<<tag_EBRecHit_Eta_.process()<<endl;
+	cout<<"tag_EERecHit_Eta_ =  "<<tag_EERecHit_Eta_.label()<<", "<<tag_EERecHit_Eta_.instance()<<", "<<tag_EERecHit_Eta_.process()<<endl;
+	cout<<"tag_ESRecHit_Eta_ =  "<<tag_ESRecHit_Eta_.label()<<", "<<tag_ESRecHit_Eta_.instance()<<", "<<tag_ESRecHit_Eta_.process()<<endl;
+
+#endif
 	
 	//create output file and tree	
 	edm::Service<TFileService> fs;
@@ -96,8 +118,8 @@ void Pi0Tuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 {
 
 	resetBranches();
-	loadEvent(iEvent, iSetup); 
-
+	loadEvent(iEvent, iSetup);
+ 
 //fill event info
   	runNum = iEvent.id().run();
   	lumiNum = iEvent.luminosityBlock();
@@ -106,25 +128,46 @@ void Pi0Tuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 
 //call specific functions
 	if(FillL1SeedFinalDecision_) GetL1SeedBit();
-	if(foundEB) recoPhoCluster_EB();//reconstruct photon clusters in EB
-	resetPhoBranches();
-	if(foundEE) recoPhoCluster_EE();//reconstruct photon clusters in EE
 
-	if(FillDiPhotonNtuple_) recoDiPhoEvents_EB();//reconstruct pi0/eta events from the photon clusters in EB
-	if(FillDiPhotonNtuple_) recoDiPhoEvents_EE();//reconstruct pi0/eta events from the photon clusters in EE
+	loadEvent_Pi0(iEvent, iSetup); 
+	resetPhoBranches();
+	if(foundEB) recoPhoCluster_EB(true);//reconstruct photon clusters in EB
+	resetPhoBranches();
+	if(foundEE) recoPhoCluster_EE(true);//reconstruct photon clusters in EE
+	if(FillDiPhotonNtuple_) recoDiPhoEvents_EB(true);//reconstruct pi0/eta events from the photon clusters in EB
+	N_ebPair_rec += N_Pair_rec;
+	if(FillDiPhotonNtuple_) recoDiPhoEvents_EE(true);//reconstruct pi0/eta events from the photon clusters in EE
+	N_eePair_rec += N_Pair_rec - N_ebPair_rec;
 	
+	N_Pi0_rec = N_Pair_rec;
+	N_ebPi0_rec = N_ebPair_rec;
+	N_eePi0_rec = N_eePair_rec;
+		
+	loadEvent_Eta(iEvent, iSetup); 
+	resetPhoBranches();
+	if(foundEB) recoPhoCluster_EB(false);//reconstruct photon clusters in EB
+	resetPhoBranches();
+	if(foundEE) recoPhoCluster_EE(false);//reconstruct photon clusters in EE
+	if(FillDiPhotonNtuple_) recoDiPhoEvents_EB(false);//reconstruct pi0/eta events from the photon clusters in EB
+	N_ebPair_rec = N_Pair_rec - N_eePair_rec;
+	if(FillDiPhotonNtuple_) recoDiPhoEvents_EE(false);//reconstruct pi0/eta events from the photon clusters in EE
+	N_eePair_rec = N_Pair_rec - N_ebPair_rec;
+	
+	N_Eta_rec = N_Pair_rec - N_Pi0_rec;
+	N_ebEta_rec = N_ebPair_rec - N_ebPi0_rec;
+	N_eeEta_rec = N_eePair_rec - N_eePi0_rec;
 //fill ntuple
 #ifdef DEBUG
 //	cout<<"N_Pho: "<<N_Pho_rec<<"  N_ebRecHit: "<<N_ebRecHit<<"   N_eeRecHit:  "<<N_eeRecHit<<endl;
 #endif
-	//if(FillDiPhotonNtuple_ && N_Pi0_rec > 0) Pi0Events->Fill();
+	//if(FillDiPhotonNtuple_ && N_Pair_rec > 0) Pi0Events->Fill();
 	Pi0Events->Fill();
 
 }
 
 
 //
-void Pi0Tuplizer::recoPhoCluster_EB()
+void Pi0Tuplizer::recoPhoCluster_EB(bool isPi0_)
 {
 	std::vector<EcalRecHit> ebseeds;
 
@@ -248,14 +291,26 @@ void Pi0Tuplizer::recoPhoCluster_EB()
 		{
 			continue;
 		}
-		
-		ebclusters.push_back( CaloCluster( e3x3, clusPos, CaloID(CaloID::DET_ECAL_BARREL), enFracs, CaloCluster::undefined, seed_id ) );
-		ebSeedTime.push_back( itseed->time() );	
-		ebNxtal.push_back(RecHitsInWindow.size());
-		ebS4S9.push_back(s4s9);		
-		ebS2S9.push_back(s2s9);		
-		ebS1S9.push_back((maxEne)/e3x3);		
-
+	
+		if(isPi0_)
+		{	
+		ebclusters_Pi0_.push_back( CaloCluster( e3x3, clusPos, CaloID(CaloID::DET_ECAL_BARREL), enFracs, CaloCluster::undefined, seed_id ) );
+		ebSeedTime_Pi0_.push_back( itseed->time() );	
+		ebNxtal_Pi0_.push_back(RecHitsInWindow.size());
+		ebS4S9_Pi0_.push_back(s4s9);		
+		ebS2S9_Pi0_.push_back(s2s9);		
+		ebS1S9_Pi0_.push_back((maxEne)/e3x3);		
+		}
+	
+		else
+		{
+		ebclusters_Eta_.push_back( CaloCluster( e3x3, clusPos, CaloID(CaloID::DET_ECAL_BARREL), enFracs, CaloCluster::undefined, seed_id ) );
+		ebSeedTime_Eta_.push_back( itseed->time() );	
+		ebNxtal_Eta_.push_back(RecHitsInWindow.size());
+		ebS4S9_Eta_.push_back(s4s9);		
+		ebS2S9_Eta_.push_back(s2s9);		
+		ebS1S9_Eta_.push_back((maxEne)/e3x3);		
+		}
 		//fill photon cluster
 		pho_E = e3x3;
 		pho_seedE = maxEne;
@@ -276,12 +331,22 @@ void Pi0Tuplizer::recoPhoCluster_EB()
 		if(FillPhotonNtuple_ ) PhoEvents->Fill();
 		N_Pho_rec ++;
 		N_ebPho_rec ++;
+		if(isPi0_)
+		{
+		N_Pho_rec_Pi0_ ++;
+		N_ebPho_rec_Pi0_ ++;
+		}
+		else
+		{
+		N_Pho_rec_Eta_ ++;
+		N_ebPho_rec_Eta_ ++;
+		}
 		
 	}//end loop of all seed xtals	
 	
 }
 
-void Pi0Tuplizer::recoPhoCluster_EE()
+void Pi0Tuplizer::recoPhoCluster_EE(bool isPi0_)
 {
 
 	std::vector<EcalRecHit> eeseends;
@@ -407,13 +472,25 @@ void Pi0Tuplizer::recoPhoCluster_EE()
 		{
 			continue;
 		}
-		
-		eeclusters.push_back( CaloCluster( e3x3, clusPos, CaloID(CaloID::DET_ECAL_ENDCAP), enFracs, CaloCluster::undefined, seed_id ) );
-		eeSeedTime.push_back( itseed->time() );	
-		eeNxtal.push_back(RecHitsInWindow.size());
-		eeS4S9.push_back(s4s9);		
-		eeS2S9.push_back(s2s9);		
-		eeS1S9.push_back((maxEne)/e3x3);		
+	
+		if(isPi0_)
+		{	
+		eeclusters_Pi0_.push_back( CaloCluster( e3x3, clusPos, CaloID(CaloID::DET_ECAL_ENDCAP), enFracs, CaloCluster::undefined, seed_id ) );
+		eeSeedTime_Pi0_.push_back( itseed->time() );	
+		eeNxtal_Pi0_.push_back(RecHitsInWindow.size());
+		eeS4S9_Pi0_.push_back(s4s9);		
+		eeS2S9_Pi0_.push_back(s2s9);		
+		eeS1S9_Pi0_.push_back((maxEne)/e3x3);		
+		}
+		else
+		{	
+		eeclusters_Eta_.push_back( CaloCluster( e3x3, clusPos, CaloID(CaloID::DET_ECAL_ENDCAP), enFracs, CaloCluster::undefined, seed_id ) );
+		eeSeedTime_Eta_.push_back( itseed->time() );	
+		eeNxtal_Eta_.push_back(RecHitsInWindow.size());
+		eeS4S9_Eta_.push_back(s4s9);		
+		eeS2S9_Eta_.push_back(s2s9);		
+		eeS1S9_Eta_.push_back((maxEne)/e3x3);		
+		}
 
 		//fill photon cluster
 		pho_E = e3x3;
@@ -435,25 +512,36 @@ void Pi0Tuplizer::recoPhoCluster_EE()
 		if(FillPhotonNtuple_ ) PhoEvents->Fill();
 		N_Pho_rec ++;
 		N_eePho_rec ++;
-		
+	
+		if(isPi0_)
+		{
+		N_Pho_rec_Pi0_ ++;
+		N_eePho_rec_Pi0_ ++;
+		}
+		else
+		{
+		N_Pho_rec_Eta_ ++;
+		N_eePho_rec_Eta_ ++;
+		}
+	
 	}//end loop of all seed xtals	
 	
 
 }
 
 
-void Pi0Tuplizer::recoDiPhoEvents_EB()
+void Pi0Tuplizer::recoDiPhoEvents_EB(bool isPi0_)
 {
-	N_Pi0_rec = 0;
+	//N_Pair_rec = 0;
 
 	int i=0;
 	
-	for(std::vector<CaloCluster>::const_iterator g1  = ebclusters.begin(); g1 != ebclusters.end(); ++g1, ++i)
+	for(std::vector<CaloCluster>::const_iterator g1  = (isPi0_? ebclusters_Pi0_.begin() : ebclusters_Eta_.begin() ); g1 != (isPi0_? ebclusters_Pi0_.end() : ebclusters_Eta_.end()); ++g1, ++i)
   	{
 		if(g1->seed().subdetId()!=1) continue;
 
 		int j=i+1;
-		for(std::vector<CaloCluster>::const_iterator g2 = g1+1; g2 != ebclusters.end(); ++g2, ++j ) 
+		for(std::vector<CaloCluster>::const_iterator g2 = g1+1; g2 != (isPi0_? ebclusters_Pi0_.end() : ebclusters_Eta_.end()); ++g2, ++j ) 
 		{
 			if(g2->seed().subdetId()!=1) continue;
 			int ind1 = i;//
@@ -484,14 +572,14 @@ void Pi0Tuplizer::recoDiPhoEvents_EB()
 			if(fabs( pi0P4.eta() ) < 1.0 ) 
 			{
 				if(pi0P4.Pt()<pi0PtCut_barrel1) continue;
-				if(ebNxtal[ind1]<nxtal1Cut_barrel1) continue;
-				if(ebNxtal[ind2]<nxtal2Cut_barrel1) continue;
+				if((isPi0_? ebNxtal_Pi0_[ind1] : ebNxtal_Eta_[ind1])<nxtal1Cut_barrel1) continue;
+				if((isPi0_? ebNxtal_Pi0_[ind2] : ebNxtal_Eta_[ind2])<nxtal2Cut_barrel1) continue;
 			}
 			else if (fabs( pi0P4.eta() ) < 1.5 ) 
 			{
 				if(pi0P4.Pt()<pi0PtCut_barrel2) continue;
-				if(ebNxtal[ind1]<nxtal1Cut_barrel2) continue;
-				if(ebNxtal[ind2]<nxtal2Cut_barrel2) continue;
+				if((isPi0_? ebNxtal_Pi0_[ind1] : ebNxtal_Eta_[ind1])<nxtal1Cut_barrel2) continue;
+				if((isPi0_? ebNxtal_Pi0_[ind2] : ebNxtal_Eta_[ind2])<nxtal2Cut_barrel2) continue;
 			}
 			else 
 			{
@@ -501,15 +589,16 @@ void Pi0Tuplizer::recoDiPhoEvents_EB()
 			if( g1P4.eta() == g2P4.eta() && g1P4.phi() == g2P4.phi() ) continue;
 			
 			//fill pi0/eta ntuple
-			if(N_Pi0_rec >= NPI0MAX-1) break; // too many pi0s
+			if(N_Pair_rec >= NPI0MAX-1) break; // too many pi0s
 			if( FillDiPhotonNtuple_ && pi0P4.mass() > ((isPi0_)?0.03:0.2) && pi0P4.mass() < ((isPi0_)?0.25:1.) )
 			{
-				mPi0_rec[N_Pi0_rec]  =  pi0P4.mass();
-				ptPi0_rec[N_Pi0_rec] =  pi0P4.Pt();
-				etaPi0_rec[N_Pi0_rec] =  pi0P4.Eta();
-				phiPi0_rec[N_Pi0_rec] =  pi0P4.Phi();
+				fromPi0[N_Pair_rec]  =  isPi0_;
+				mPi0_rec[N_Pair_rec]  =  pi0P4.mass();
+				ptPi0_rec[N_Pair_rec] =  pi0P4.Pt();
+				etaPi0_rec[N_Pair_rec] =  pi0P4.Eta();
+				phiPi0_rec[N_Pair_rec] =  pi0P4.Phi();
 	
-				deltaRG1G2_rec[N_Pi0_rec] = GetDeltaR( g1P4.eta(), g2P4.eta(), g1P4.phi(), g2P4.phi() );
+				deltaRG1G2_rec[N_Pair_rec] = GetDeltaR( g1P4.eta(), g2P4.eta(), g1P4.phi(), g2P4.phi() );
 
 				EBDetId  id_1(g1->seed());
               			EBDetId  id_2(g2->seed());
@@ -521,61 +610,77 @@ void Pi0Tuplizer::recoDiPhoEvents_EB()
 
 				if(!Inverted)
 				{
-					enG1_rec[N_Pi0_rec] =  g1P4.E();
-					enG2_rec[N_Pi0_rec] =  g2P4.E();
-					etaG1_rec[N_Pi0_rec] =  g1P4.Eta();
-					etaG2_rec[N_Pi0_rec] =  g2P4.Eta();
-					phiG1_rec[N_Pi0_rec] =  g1P4.Phi();
-					phiG2_rec[N_Pi0_rec] =  g2P4.Phi();
-					ptG1_rec[N_Pi0_rec] =  g1P4.Pt();
-					ptG2_rec[N_Pi0_rec] =  g2P4.Pt();
+					enG1_rec[N_Pair_rec] =  g1P4.E();
+					enG2_rec[N_Pair_rec] =  g2P4.E();
+					etaG1_rec[N_Pair_rec] =  g1P4.Eta();
+					etaG2_rec[N_Pair_rec] =  g2P4.Eta();
+					phiG1_rec[N_Pair_rec] =  g1P4.Phi();
+					phiG2_rec[N_Pair_rec] =  g2P4.Phi();
+					ptG1_rec[N_Pair_rec] =  g1P4.Pt();
+					ptG2_rec[N_Pair_rec] =  g2P4.Pt();
 				}
 				else
 				{
-					enG1_rec[N_Pi0_rec] =  g2P4.E();
-					enG2_rec[N_Pi0_rec] =  g1P4.E();
-					etaG1_rec[N_Pi0_rec] =  g2P4.Eta();
-					etaG2_rec[N_Pi0_rec] =  g1P4.Eta();
-					phiG1_rec[N_Pi0_rec] =  g2P4.Phi();
-					phiG2_rec[N_Pi0_rec] =  g1P4.Phi();
-					ptG1_rec[N_Pi0_rec] =  g2P4.Pt();
-					ptG2_rec[N_Pi0_rec] =  g1P4.Pt();
+					enG1_rec[N_Pair_rec] =  g2P4.E();
+					enG2_rec[N_Pair_rec] =  g1P4.E();
+					etaG1_rec[N_Pair_rec] =  g2P4.Eta();
+					etaG2_rec[N_Pair_rec] =  g1P4.Eta();
+					phiG1_rec[N_Pair_rec] =  g2P4.Phi();
+					phiG2_rec[N_Pair_rec] =  g1P4.Phi();
+					ptG1_rec[N_Pair_rec] =  g2P4.Pt();
+					ptG2_rec[N_Pair_rec] =  g1P4.Pt();
 				}
 				
-				iEtaG1_rec[N_Pi0_rec] =  id_1.ieta();
-				iEtaG2_rec[N_Pi0_rec] =  id_2.ieta();
-				iPhiG1_rec[N_Pi0_rec] =  id_1.iphi();
-				iPhiG1_rec[N_Pi0_rec] =  id_2.iphi();
+				iEtaG1_rec[N_Pair_rec] =  id_1.ieta();
+				iEtaG2_rec[N_Pair_rec] =  id_2.ieta();
+				iPhiG1_rec[N_Pair_rec] =  id_1.iphi();
+				iPhiG1_rec[N_Pair_rec] =  id_2.iphi();
 
-				seedTimeG1_rec[N_Pi0_rec] = ebSeedTime[ind1];	
-				seedTimeG2_rec[N_Pi0_rec] = ebSeedTime[ind2];	
-				s4s9G1_rec[N_Pi0_rec] = ebS4S9[ind1];	
-				s4s9G2_rec[N_Pi0_rec] = ebS4S9[ind2];	
-				s2s9G1_rec[N_Pi0_rec] = ebS2S9[ind1];	
-				s2s9G2_rec[N_Pi0_rec] = ebS2S9[ind2];	
-				s1s9G1_rec[N_Pi0_rec] = ebS1S9[ind1];	
-				s1s9G2_rec[N_Pi0_rec] = ebS1S9[ind2];	
-				nxtalG1_rec[N_Pi0_rec] = ebNxtal[ind1];	
-				nxtalG2_rec[N_Pi0_rec] = ebNxtal[ind2];	
-				N_Pi0_rec ++;			
+				if(isPi0_)
+				{
+				seedTimeG1_rec[N_Pair_rec] = ebSeedTime_Pi0_[ind1];	
+				seedTimeG2_rec[N_Pair_rec] = ebSeedTime_Pi0_[ind2];	
+				s4s9G1_rec[N_Pair_rec] = ebS4S9_Pi0_[ind1];	
+				s4s9G2_rec[N_Pair_rec] = ebS4S9_Pi0_[ind2];	
+				s2s9G1_rec[N_Pair_rec] = ebS2S9_Pi0_[ind1];	
+				s2s9G2_rec[N_Pair_rec] = ebS2S9_Pi0_[ind2];	
+				s1s9G1_rec[N_Pair_rec] = ebS1S9_Pi0_[ind1];	
+				s1s9G2_rec[N_Pair_rec] = ebS1S9_Pi0_[ind2];	
+				nxtalG1_rec[N_Pair_rec] = ebNxtal_Pi0_[ind1];	
+				nxtalG2_rec[N_Pair_rec] = ebNxtal_Pi0_[ind2];	
+				}
+				else
+				{
+				seedTimeG1_rec[N_Pair_rec] = ebSeedTime_Eta_[ind1];	
+				seedTimeG2_rec[N_Pair_rec] = ebSeedTime_Eta_[ind2];	
+				s4s9G1_rec[N_Pair_rec] = ebS4S9_Eta_[ind1];	
+				s4s9G2_rec[N_Pair_rec] = ebS4S9_Eta_[ind2];	
+				s2s9G1_rec[N_Pair_rec] = ebS2S9_Eta_[ind1];	
+				s2s9G2_rec[N_Pair_rec] = ebS2S9_Eta_[ind2];	
+				s1s9G1_rec[N_Pair_rec] = ebS1S9_Eta_[ind1];	
+				s1s9G2_rec[N_Pair_rec] = ebS1S9_Eta_[ind2];	
+				nxtalG1_rec[N_Pair_rec] = ebNxtal_Eta_[ind1];	
+				nxtalG2_rec[N_Pair_rec] = ebNxtal_Eta_[ind2];	
+				}
+				N_Pair_rec ++;			
 			}
-			if(N_Pi0_rec >= NPI0MAX-1) break; // too many pi0s
+			if(N_Pair_rec >= NPI0MAX-1) break; // too many pi0s
 		}//end loop of g2	
 	}//end loop of g1
 }
 
-void Pi0Tuplizer::recoDiPhoEvents_EE()
+void Pi0Tuplizer::recoDiPhoEvents_EE(bool isPi0_)
 {
 
 
 	int i=0;
 	
-	for(std::vector<CaloCluster>::const_iterator g1  = eeclusters.begin(); g1 != eeclusters.end(); ++g1, ++i)
+	for(std::vector<CaloCluster>::const_iterator g1  = (isPi0_? eeclusters_Pi0_.begin() : eeclusters_Eta_.begin() ); g1 != (isPi0_? eeclusters_Pi0_.end() : eeclusters_Eta_.end()); ++g1, ++i)
   	{
 		if(g1->seed().subdetId()!=2) continue;
 
 		int j=i+1;
-		for(std::vector<CaloCluster>::const_iterator g2 = g1+1; g2 != eeclusters.end(); ++g2, ++j ) 
+		for(std::vector<CaloCluster>::const_iterator g2 = g1+1; g2 != (isPi0_? eeclusters_Pi0_.end() : eeclusters_Eta_.end()); ++g2, ++j ) 
 		{
 			if(g2->seed().subdetId()!=2) continue;
 			int ind1 = i;//
@@ -607,14 +712,14 @@ void Pi0Tuplizer::recoDiPhoEvents_EE()
 			else if(fabs( pi0P4.eta() ) < 1.8 ) 
 			{
 				if(pi0P4.Pt()<pi0PtCut_endcap1) continue;
-				if(eeNxtal[ind1]<nxtal1Cut_endcap1) continue;
-				if(eeNxtal[ind2]<nxtal2Cut_endcap1) continue;
+				if((isPi0_? eeNxtal_Pi0_[ind1] : eeNxtal_Eta_[ind1])<nxtal1Cut_endcap1) continue;
+				if((isPi0_? eeNxtal_Pi0_[ind2] : eeNxtal_Eta_[ind2])<nxtal2Cut_endcap1) continue;
 			}
 			else if (fabs( pi0P4.eta() ) < 3.0 ) 
 			{
 				if(pi0P4.Pt()<pi0PtCut_endcap2) continue;
-				if(eeNxtal[ind1]<nxtal1Cut_endcap2) continue;
-				if(eeNxtal[ind2]<nxtal2Cut_endcap2) continue;
+				if((isPi0_? eeNxtal_Pi0_[ind1] : eeNxtal_Eta_[ind1])<nxtal1Cut_endcap2) continue;
+				if((isPi0_? eeNxtal_Pi0_[ind2] : eeNxtal_Eta_[ind2])<nxtal2Cut_endcap2) continue;
 			}
 			else 
 			{
@@ -624,15 +729,16 @@ void Pi0Tuplizer::recoDiPhoEvents_EE()
 			if( g1P4.eta() == g2P4.eta() && g1P4.phi() == g2P4.phi() ) continue;
 			
 			//fill pi0/eta ntuple
-			if(N_Pi0_rec >= NPI0MAX-1) break; // too many pi0s
+			if(N_Pair_rec >= NPI0MAX-1) break; // too many pi0s
 			if( FillDiPhotonNtuple_ && pi0P4.mass() > ((isPi0_)?0.03:0.2) && pi0P4.mass() < ((isPi0_)?0.25:1.) )
 			{
-				mPi0_rec[N_Pi0_rec]  =  pi0P4.mass();
-				ptPi0_rec[N_Pi0_rec] =  pi0P4.Pt();
-				etaPi0_rec[N_Pi0_rec] =  pi0P4.Eta();
-				phiPi0_rec[N_Pi0_rec] =  pi0P4.Phi();
+				fromPi0[N_Pair_rec]  =  isPi0_;
+				mPi0_rec[N_Pair_rec]  =  pi0P4.mass();
+				ptPi0_rec[N_Pair_rec] =  pi0P4.Pt();
+				etaPi0_rec[N_Pair_rec] =  pi0P4.Eta();
+				phiPi0_rec[N_Pair_rec] =  pi0P4.Phi();
 	
-				deltaRG1G2_rec[N_Pi0_rec] = GetDeltaR( g1P4.eta(), g2P4.eta(), g1P4.phi(), g2P4.phi() );
+				deltaRG1G2_rec[N_Pair_rec] = GetDeltaR( g1P4.eta(), g2P4.eta(), g1P4.phi(), g2P4.phi() );
 
 				EEDetId  id_1(g1->seed());
               			EEDetId  id_2(g2->seed());
@@ -644,45 +750,61 @@ void Pi0Tuplizer::recoDiPhoEvents_EE()
 
 				if(!Inverted)
 				{
-					enG1_rec[N_Pi0_rec] =  g1P4.E();
-					enG2_rec[N_Pi0_rec] =  g2P4.E();
-					etaG1_rec[N_Pi0_rec] =  g1P4.Eta();
-					etaG2_rec[N_Pi0_rec] =  g2P4.Eta();
-					phiG1_rec[N_Pi0_rec] =  g1P4.Phi();
-					phiG2_rec[N_Pi0_rec] =  g2P4.Phi();
-					ptG1_rec[N_Pi0_rec] =  g1P4.Pt();
-					ptG2_rec[N_Pi0_rec] =  g2P4.Pt();
+					enG1_rec[N_Pair_rec] =  g1P4.E();
+					enG2_rec[N_Pair_rec] =  g2P4.E();
+					etaG1_rec[N_Pair_rec] =  g1P4.Eta();
+					etaG2_rec[N_Pair_rec] =  g2P4.Eta();
+					phiG1_rec[N_Pair_rec] =  g1P4.Phi();
+					phiG2_rec[N_Pair_rec] =  g2P4.Phi();
+					ptG1_rec[N_Pair_rec] =  g1P4.Pt();
+					ptG2_rec[N_Pair_rec] =  g2P4.Pt();
 				}
 				else
 				{
-					enG1_rec[N_Pi0_rec] =  g2P4.E();
-					enG2_rec[N_Pi0_rec] =  g1P4.E();
-					etaG1_rec[N_Pi0_rec] =  g2P4.Eta();
-					etaG2_rec[N_Pi0_rec] =  g1P4.Eta();
-					phiG1_rec[N_Pi0_rec] =  g2P4.Phi();
-					phiG2_rec[N_Pi0_rec] =  g1P4.Phi();
-					ptG1_rec[N_Pi0_rec] =  g2P4.Pt();
-					ptG2_rec[N_Pi0_rec] =  g1P4.Pt();
+					enG1_rec[N_Pair_rec] =  g2P4.E();
+					enG2_rec[N_Pair_rec] =  g1P4.E();
+					etaG1_rec[N_Pair_rec] =  g2P4.Eta();
+					etaG2_rec[N_Pair_rec] =  g1P4.Eta();
+					phiG1_rec[N_Pair_rec] =  g2P4.Phi();
+					phiG2_rec[N_Pair_rec] =  g1P4.Phi();
+					ptG1_rec[N_Pair_rec] =  g2P4.Pt();
+					ptG2_rec[N_Pair_rec] =  g1P4.Pt();
 				}
 				
-				iXG1_rec[N_Pi0_rec] =  id_1.ix();
-				iXG2_rec[N_Pi0_rec] =  id_2.ix();
-				iYG1_rec[N_Pi0_rec] =  id_1.iy();
-				iYG1_rec[N_Pi0_rec] =  id_2.iy();
-
-				seedTimeG1_rec[N_Pi0_rec] = eeSeedTime[ind1];	
-				seedTimeG2_rec[N_Pi0_rec] = eeSeedTime[ind2];	
-				s4s9G1_rec[N_Pi0_rec] = eeS4S9[ind1];	
-				s4s9G2_rec[N_Pi0_rec] = eeS4S9[ind2];	
-				s2s9G1_rec[N_Pi0_rec] = eeS2S9[ind1];	
-				s2s9G2_rec[N_Pi0_rec] = eeS2S9[ind2];	
-				s1s9G1_rec[N_Pi0_rec] = eeS1S9[ind1];	
-				s1s9G2_rec[N_Pi0_rec] = eeS1S9[ind2];	
-				nxtalG1_rec[N_Pi0_rec] = eeNxtal[ind1];	
-				nxtalG2_rec[N_Pi0_rec] = eeNxtal[ind2];	
-				N_Pi0_rec ++;			
+				iXG1_rec[N_Pair_rec] =  id_1.ix();
+				iXG2_rec[N_Pair_rec] =  id_2.ix();
+				iYG1_rec[N_Pair_rec] =  id_1.iy();
+				iYG1_rec[N_Pair_rec] =  id_2.iy();
+				
+				if(isPi0_)
+				{
+				seedTimeG1_rec[N_Pair_rec] = eeSeedTime_Pi0_[ind1];	
+				seedTimeG2_rec[N_Pair_rec] = eeSeedTime_Pi0_[ind2];	
+				s4s9G1_rec[N_Pair_rec] = eeS4S9_Pi0_[ind1];	
+				s4s9G2_rec[N_Pair_rec] = eeS4S9_Pi0_[ind2];	
+				s2s9G1_rec[N_Pair_rec] = eeS2S9_Pi0_[ind1];	
+				s2s9G2_rec[N_Pair_rec] = eeS2S9_Pi0_[ind2];	
+				s1s9G1_rec[N_Pair_rec] = eeS1S9_Pi0_[ind1];	
+				s1s9G2_rec[N_Pair_rec] = eeS1S9_Pi0_[ind2];	
+				nxtalG1_rec[N_Pair_rec] = eeNxtal_Pi0_[ind1];	
+				nxtalG2_rec[N_Pair_rec] = eeNxtal_Pi0_[ind2];	
+				}
+				else
+				{
+				seedTimeG1_rec[N_Pair_rec] = eeSeedTime_Eta_[ind1];	
+				seedTimeG2_rec[N_Pair_rec] = eeSeedTime_Eta_[ind2];	
+				s4s9G1_rec[N_Pair_rec] = eeS4S9_Eta_[ind1];	
+				s4s9G2_rec[N_Pair_rec] = eeS4S9_Eta_[ind2];	
+				s2s9G1_rec[N_Pair_rec] = eeS2S9_Eta_[ind1];	
+				s2s9G2_rec[N_Pair_rec] = eeS2S9_Eta_[ind2];	
+				s1s9G1_rec[N_Pair_rec] = eeS1S9_Eta_[ind1];	
+				s1s9G2_rec[N_Pair_rec] = eeS1S9_Eta_[ind2];	
+				nxtalG1_rec[N_Pair_rec] = eeNxtal_Eta_[ind1];	
+				nxtalG2_rec[N_Pair_rec] = eeNxtal_Eta_[ind2];	
+				}
+				N_Pair_rec ++;			
 			}
-			if(N_Pi0_rec >= NPI0MAX-1) break; // too many pi0s
+			if(N_Pair_rec >= NPI0MAX-1) break; // too many pi0s
 		}//end loop of g2	
 	}//end loop of g1
 
@@ -716,64 +838,84 @@ void Pi0Tuplizer::GetL1SeedBit()
 //load all collection from cfg file
 void Pi0Tuplizer::loadEvent(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
-	ebclusters.clear();
-	eeclusters.clear();
-	ebSeedTime.clear();
-	eeSeedTime.clear();
-	ebNxtal.clear();
-	eeNxtal.clear();
-	ebS4S9.clear();
-	eeS4S9.clear();
-	ebS2S9.clear();
-	eeS2S9.clear();
-	ebS1S9.clear();
-	eeS1S9.clear();
-
 	if(FillL1SeedFinalDecision_) iEvent.getByToken(uGtAlgToken_,uGtAlg);	
-	
-	foundEB = true;
-	foundEE = true;
-	foundES = true;
-
-	try
-	{
-		iEvent.getByToken ( EBRecHitCollectionToken_, ebRecHit);
-	}
-	catch (cms::Exception& ex)
-	{
-		foundEB = ebRecHit->size() > 0;
-	}
-
-	try
-	{
-		iEvent.getByToken ( EERecHitCollectionToken_, eeRecHit);
-	}
-	catch (cms::Exception& ex)
-	{
-		foundEE = esRecHit->size() > 0;
-	}
-
-	try
-	{
-		iEvent.getByToken ( ESRecHitCollectionToken_, esRecHit);
-	}
-	catch (cms::Exception& ex)
-	{
-		foundES = esRecHit->size() > 0;
-	}
-	
-	if(foundEB) N_ebRecHit = ebRecHit->size();
-	if(foundEE) N_eeRecHit = eeRecHit->size();
-	if(foundES) N_esRecHit = esRecHit->size();
-	
 	edm::ESHandle<CaloGeometry> geoHandle;
   	iSetup.get<CaloGeometryRecord>().get(geoHandle);
   	geometry = geoHandle.product();
   	estopology_ = new EcalPreshowerTopology(geoHandle);
+}
 
+
+void Pi0Tuplizer::loadEvent_Pi0(const edm::Event& iEvent, const edm::EventSetup& iSetup)
+{
+	ebclusters_Pi0_.clear();
+	eeclusters_Pi0_.clear();
+	ebSeedTime_Pi0_.clear();
+	eeSeedTime_Pi0_.clear();
+	ebNxtal_Pi0_.clear();
+	eeNxtal_Pi0_.clear();
+	ebS4S9_Pi0_.clear();
+	eeS4S9_Pi0_.clear();
+	ebS2S9_Pi0_.clear();
+	eeS2S9_Pi0_.clear();
+	ebS1S9_Pi0_.clear();
+	eeS1S9_Pi0_.clear();
+	
+	foundEB = false;
+	foundEE = false;
+	foundES = false;
+
+	iEvent.getByToken ( EBRecHitCollectionToken_Pi0_, ebRecHit);
+	foundEB = ebRecHit->size() > 0;
+	iEvent.getByToken ( EERecHitCollectionToken_Pi0_, eeRecHit);
+	foundEE = eeRecHit->size() > 0;
+	iEvent.getByToken ( ESRecHitCollectionToken_Pi0_, esRecHit);
+	foundES = esRecHit->size() > 0;
+	N_ebRecHit_Pi0_ += ebRecHit->size();
+	N_eeRecHit_Pi0_ += eeRecHit->size();
+	N_esRecHit_Pi0_ += esRecHit->size();
+	
+	N_ebRecHit += ebRecHit->size();
+	N_eeRecHit += eeRecHit->size();
+	N_esRecHit += esRecHit->size();
 
 }
 
+
+void Pi0Tuplizer::loadEvent_Eta(const edm::Event& iEvent, const edm::EventSetup& iSetup)
+{
+	ebclusters_Eta_.clear();
+	eeclusters_Eta_.clear();
+	ebSeedTime_Eta_.clear();
+	eeSeedTime_Eta_.clear();
+	ebNxtal_Eta_.clear();
+	eeNxtal_Eta_.clear();
+	ebS4S9_Eta_.clear();
+	eeS4S9_Eta_.clear();
+	ebS2S9_Eta_.clear();
+	eeS2S9_Eta_.clear();
+	ebS1S9_Eta_.clear();
+	eeS1S9_Eta_.clear();
+	
+	foundEB = false;
+	foundEE = false;
+	foundES = false;
+
+	iEvent.getByToken ( EBRecHitCollectionToken_Eta_, ebRecHit);
+	foundEB = ebRecHit->size() > 0;
+	iEvent.getByToken ( EERecHitCollectionToken_Eta_, eeRecHit);
+	foundEE = eeRecHit->size() > 0;
+	iEvent.getByToken ( ESRecHitCollectionToken_Eta_, esRecHit);
+	foundES = esRecHit->size() > 0;
+	N_ebRecHit_Eta_ += ebRecHit->size();
+	N_eeRecHit_Eta_ += eeRecHit->size();
+	N_esRecHit_Eta_ += esRecHit->size();
+	
+	N_ebRecHit += ebRecHit->size();
+	N_eeRecHit += eeRecHit->size();
+	N_esRecHit += esRecHit->size();
+
+}
 
 
 // ------------ method called once each job just before starting event loop  ------------
@@ -821,41 +963,67 @@ void Pi0Tuplizer::setBranches()
 	Pi0Events->Branch( "N_ebRecHit", &N_ebRecHit, "N_ebRecHit/I");
 	Pi0Events->Branch( "N_eeRecHit", &N_eeRecHit, "N_eeRecHit/I");
 	Pi0Events->Branch( "N_esRecHit", &N_esRecHit, "N_esRecHit/I");
+	Pi0Events->Branch( "N_ebRecHit_Pi0_", &N_ebRecHit_Pi0_, "N_ebRecHit_Pi0_/I");
+	Pi0Events->Branch( "N_eeRecHit_Pi0_", &N_eeRecHit_Pi0_, "N_eeRecHit_Pi0_/I");
+	Pi0Events->Branch( "N_esRecHit_Pi0_", &N_esRecHit_Pi0_, "N_esRecHit_Pi0_/I");
+	Pi0Events->Branch( "N_ebRecHit_Eta_", &N_ebRecHit_Eta_, "N_ebRecHit_Eta_/I");
+	Pi0Events->Branch( "N_eeRecHit_Eta_", &N_eeRecHit_Eta_, "N_eeRecHit_Eta_/I");
+	Pi0Events->Branch( "N_esRecHit_Eta_", &N_esRecHit_Eta_, "N_esRecHit_Eta_/I");
 	Pi0Events->Branch( "N_Pho_rec", &N_Pho_rec, "N_Pho_rec/I");
 	Pi0Events->Branch( "N_ebPho_rec", &N_ebPho_rec, "N_ebPho_rec/I");
 	Pi0Events->Branch( "N_eePho_rec", &N_eePho_rec, "N_eePho_rec/I");
+	
+	Pi0Events->Branch( "N_Pho_rec_Pi0_", &N_Pho_rec_Pi0_, "N_Pho_rec_Pi0_/I");
+	Pi0Events->Branch( "N_ebPho_rec_Pi0_", &N_ebPho_rec_Pi0_, "N_ebPho_rec_Pi0_/I");
+	Pi0Events->Branch( "N_eePho_rec_Pi0_", &N_eePho_rec_Pi0_, "N_eePho_rec_Pi0_/I");
+	Pi0Events->Branch( "N_Pho_rec_Eta_", &N_Pho_rec_Eta_, "N_Pho_rec_Eta_/I");
+	Pi0Events->Branch( "N_ebPho_rec_Eta_", &N_ebPho_rec_Eta_, "N_ebPho_rec_Eta_/I");
+	Pi0Events->Branch( "N_eePho_rec_Eta_", &N_eePho_rec_Eta_, "N_eePho_rec_Eta_/I");
+
+	Pi0Events->Branch( "N_Pair_rec", &N_Pair_rec, "N_Pair_rec/I");
 	Pi0Events->Branch( "N_Pi0_rec", &N_Pi0_rec, "N_Pi0_rec/I");
-	Pi0Events->Branch( "mPi0_rec", mPi0_rec, "mPi0_rec[N_Pi0_rec]/F");		
-	Pi0Events->Branch( "ptPi0_rec", ptPi0_rec, "ptPi0_rec[N_Pi0_rec]/F");		
-	Pi0Events->Branch( "etaPi0_rec", etaPi0_rec, "etaPi0_rec[N_Pi0_rec]/F");		
-	Pi0Events->Branch( "phiPi0_rec", phiPi0_rec, "phiPi0_rec[N_Pi0_rec]/F");		
-	Pi0Events->Branch( "enG1_rec", enG1_rec, "enG1_rec[N_Pi0_rec]/F");		
-	Pi0Events->Branch( "enG2_rec", enG2_rec, "enG2_rec[N_Pi0_rec]/F");		
-	Pi0Events->Branch( "etaG1_rec", etaG1_rec, "etaG1_rec[N_Pi0_rec]/F");		
-	Pi0Events->Branch( "etaG2_rec", etaG2_rec, "etaG2_rec[N_Pi0_rec]/F");		
-	Pi0Events->Branch( "phiG1_rec", phiG1_rec, "phiG1_rec[N_Pi0_rec]/F");		
-	Pi0Events->Branch( "phiG2_rec", phiG2_rec, "phiG2_rec[N_Pi0_rec]/F");		
-	Pi0Events->Branch( "ptG1_rec", ptG1_rec, "ptG1_rec[N_Pi0_rec]/F");		
-	Pi0Events->Branch( "ptG2_rec", ptG2_rec, "ptG2_rec[N_Pi0_rec]/F");		
-	Pi0Events->Branch( "iEtaG1_rec", iEtaG1_rec, "iEtaG1_rec[N_Pi0_rec]/I");		
-	Pi0Events->Branch( "iXG1_rec", iXG1_rec, "iXG1_rec[N_Pi0_rec]/I");		
-	Pi0Events->Branch( "iEtaG2_rec", iEtaG2_rec, "iEtaG2_rec[N_Pi0_rec]/I");		
-	Pi0Events->Branch( "iXG2_rec", iXG2_rec, "iXG2_rec[N_Pi0_rec]/I");		
-	Pi0Events->Branch( "iPhiG1_rec", iPhiG1_rec, "iPhiG1_rec[N_Pi0_rec]/I");		
-	Pi0Events->Branch( "iYG1_rec", iYG1_rec, "iYG1_rec[N_Pi0_rec]/I");		
-	Pi0Events->Branch( "iPhiG2_rec", iPhiG2_rec, "iPhiG2_rec[N_Pi0_rec]/I");		
-	Pi0Events->Branch( "iYG2_rec", iYG2_rec, "iYG2_rec[N_Pi0_rec]/I");		
-	Pi0Events->Branch( "deltaRG1G2_rec", deltaRG1G2_rec, "deltaRG1G2_rec[N_Pi0_rec]/F");		
-	Pi0Events->Branch( "nxtalG1_rec", nxtalG1_rec, "nxtalG1_rec[N_Pi0_rec]/I");		
-	Pi0Events->Branch( "nxtalG2_rec", nxtalG2_rec, "nxtalG2_rec[N_Pi0_rec]/I");		
-	Pi0Events->Branch( "seedTimeG1_rec", seedTimeG1_rec, "seedTimeG1_rec[N_Pi0_rec]/F");		
-	Pi0Events->Branch( "seedTimeG2_rec", seedTimeG2_rec, "seedTimeG2_rec[N_Pi0_rec]/F");		
-	Pi0Events->Branch( "s4s9G1_rec", s4s9G1_rec, "s4s9G1_rec[N_Pi0_rec]/F");		
-	Pi0Events->Branch( "s4s9G2_rec", s4s9G2_rec, "s4s9G2_rec[N_Pi0_rec]/F");		
-	Pi0Events->Branch( "s2s9G1_rec", s2s9G1_rec, "s2s9G1_rec[N_Pi0_rec]/F");		
-	Pi0Events->Branch( "s2s9G2_rec", s2s9G2_rec, "s2s9G2_rec[N_Pi0_rec]/F");		
-	Pi0Events->Branch( "s1s9G1_rec", s1s9G1_rec, "s1s9G1_rec[N_Pi0_rec]/F");		
-	Pi0Events->Branch( "s1s9G2_rec", s1s9G2_rec, "s1s9G2_rec[N_Pi0_rec]/F");		
+	Pi0Events->Branch( "N_Eta_rec", &N_Eta_rec, "N_Eta_rec/I");
+	
+	Pi0Events->Branch( "N_ebPair_rec", &N_ebPair_rec, "N_ebPair_rec/I");
+	Pi0Events->Branch( "N_ebPi0_rec", &N_ebPi0_rec, "N_ebPi0_rec/I");
+	Pi0Events->Branch( "N_ebEta_rec", &N_ebEta_rec, "N_ebEta_rec/I");
+	
+	Pi0Events->Branch( "N_eePair_rec", &N_eePair_rec, "N_eePair_rec/I");
+	Pi0Events->Branch( "N_eePi0_rec", &N_eePi0_rec, "N_eePi0_rec/I");
+	Pi0Events->Branch( "N_eeEta_rec", &N_eeEta_rec, "N_eeEta_rec/I");
+
+	Pi0Events->Branch( "fromPi0", fromPi0, "fromPi0[N_Pair_rec]/O");		
+	Pi0Events->Branch( "mPi0_rec", mPi0_rec, "mPi0_rec[N_Pair_rec]/F");		
+	Pi0Events->Branch( "ptPi0_rec", ptPi0_rec, "ptPi0_rec[N_Pair_rec]/F");		
+	Pi0Events->Branch( "etaPi0_rec", etaPi0_rec, "etaPi0_rec[N_Pair_rec]/F");		
+	Pi0Events->Branch( "phiPi0_rec", phiPi0_rec, "phiPi0_rec[N_Pair_rec]/F");		
+	Pi0Events->Branch( "enG1_rec", enG1_rec, "enG1_rec[N_Pair_rec]/F");		
+	Pi0Events->Branch( "enG2_rec", enG2_rec, "enG2_rec[N_Pair_rec]/F");		
+	Pi0Events->Branch( "etaG1_rec", etaG1_rec, "etaG1_rec[N_Pair_rec]/F");		
+	Pi0Events->Branch( "etaG2_rec", etaG2_rec, "etaG2_rec[N_Pair_rec]/F");		
+	Pi0Events->Branch( "phiG1_rec", phiG1_rec, "phiG1_rec[N_Pair_rec]/F");		
+	Pi0Events->Branch( "phiG2_rec", phiG2_rec, "phiG2_rec[N_Pair_rec]/F");		
+	Pi0Events->Branch( "ptG1_rec", ptG1_rec, "ptG1_rec[N_Pair_rec]/F");		
+	Pi0Events->Branch( "ptG2_rec", ptG2_rec, "ptG2_rec[N_Pair_rec]/F");		
+	Pi0Events->Branch( "iEtaG1_rec", iEtaG1_rec, "iEtaG1_rec[N_Pair_rec]/I");		
+	Pi0Events->Branch( "iXG1_rec", iXG1_rec, "iXG1_rec[N_Pair_rec]/I");		
+	Pi0Events->Branch( "iEtaG2_rec", iEtaG2_rec, "iEtaG2_rec[N_Pair_rec]/I");		
+	Pi0Events->Branch( "iXG2_rec", iXG2_rec, "iXG2_rec[N_Pair_rec]/I");		
+	Pi0Events->Branch( "iPhiG1_rec", iPhiG1_rec, "iPhiG1_rec[N_Pair_rec]/I");		
+	Pi0Events->Branch( "iYG1_rec", iYG1_rec, "iYG1_rec[N_Pair_rec]/I");		
+	Pi0Events->Branch( "iPhiG2_rec", iPhiG2_rec, "iPhiG2_rec[N_Pair_rec]/I");		
+	Pi0Events->Branch( "iYG2_rec", iYG2_rec, "iYG2_rec[N_Pair_rec]/I");		
+	Pi0Events->Branch( "deltaRG1G2_rec", deltaRG1G2_rec, "deltaRG1G2_rec[N_Pair_rec]/F");		
+	Pi0Events->Branch( "nxtalG1_rec", nxtalG1_rec, "nxtalG1_rec[N_Pair_rec]/I");		
+	Pi0Events->Branch( "nxtalG2_rec", nxtalG2_rec, "nxtalG2_rec[N_Pair_rec]/I");		
+	Pi0Events->Branch( "seedTimeG1_rec", seedTimeG1_rec, "seedTimeG1_rec[N_Pair_rec]/F");		
+	Pi0Events->Branch( "seedTimeG2_rec", seedTimeG2_rec, "seedTimeG2_rec[N_Pair_rec]/F");		
+	Pi0Events->Branch( "s4s9G1_rec", s4s9G1_rec, "s4s9G1_rec[N_Pair_rec]/F");		
+	Pi0Events->Branch( "s4s9G2_rec", s4s9G2_rec, "s4s9G2_rec[N_Pair_rec]/F");		
+	Pi0Events->Branch( "s2s9G1_rec", s2s9G1_rec, "s2s9G1_rec[N_Pair_rec]/F");		
+	Pi0Events->Branch( "s2s9G2_rec", s2s9G2_rec, "s2s9G2_rec[N_Pair_rec]/F");		
+	Pi0Events->Branch( "s1s9G1_rec", s1s9G1_rec, "s1s9G1_rec[N_Pair_rec]/F");		
+	Pi0Events->Branch( "s1s9G2_rec", s1s9G2_rec, "s1s9G2_rec[N_Pair_rec]/F");		
 //photon ntuple
 	PhoEvents->Branch("runNum", &runNum, "runNum/i");
   	PhoEvents->Branch("lumiNum", &lumiNum, "lumiNum/i");
@@ -894,15 +1062,38 @@ void Pi0Tuplizer::resetBranches()
 	allL1SeedFinalDecision[i] = false;
 	}	
 	L1SeedBitFinalDecision->clear();
+	N_Pair_rec = 0;
+	N_ebPair_rec = 0;
+	N_eePair_rec = 0;
 	N_Pi0_rec = 0;
+	N_ebPi0_rec = 0;
+	N_eePi0_rec = 0;
+	N_Eta_rec = 0;
+	N_ebEta_rec = 0;
+	N_eeEta_rec = 0;
 	N_Pho_rec = 0;
 	N_ebPho_rec = 0;
 	N_eePho_rec = 0;
+	N_Pho_rec_Pi0_ = 0;
+	N_ebPho_rec_Pi0_ = 0;
+	N_eePho_rec_Pi0_ = 0;
+	N_Pho_rec_Eta_ = 0;
+	N_ebPho_rec_Eta_ = 0;
+	N_eePho_rec_Eta_ = 0;
+
 	N_ebRecHit = 0;
 	N_eeRecHit = 0;
 	N_esRecHit = 0;
+	N_ebRecHit_Pi0_ = 0;
+	N_eeRecHit_Pi0_ = 0;
+	N_esRecHit_Pi0_ = 0;
+	N_ebRecHit_Eta_ = 0;
+	N_eeRecHit_Eta_ = 0;
+	N_esRecHit_Eta_ = 0;
+
 	for(int i=0;i<NPI0MAX;i++)
 	{
+		fromPi0[i] = false;
 		mPi0_rec[i] = 0;
 		ptPi0_rec[i] = 0;
 		etaPi0_rec[i] = 0;
