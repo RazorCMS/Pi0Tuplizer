@@ -103,6 +103,8 @@ private:
    	void loadEvent(const edm::Event& iEvent, const edm::EventSetup& iSetup); //call at the beginning of each event to get input handles from the python config
    	void loadEvent_Pi0(const edm::Event& iEvent, const edm::EventSetup& iSetup); //call at the beginning of each event to get input handles from the python config
    	void loadEvent_Eta(const edm::Event& iEvent, const edm::EventSetup& iSetup); //call at the beginning of each event to get input handles from the python config
+	void loadCut_Pi0(const edm::ParameterSet& iConfig);
+	void loadCut_Eta(const edm::ParameterSet& iConfig);
 	virtual void resetBranches(); // clear all variables
 	virtual void resetPhoBranches(); // clear all variables in PhoEvents tree
    	virtual void setBranches(); // set branch of ntuple
@@ -284,29 +286,53 @@ private:
 	bool FillDiPhotonNtuple_;
 	bool FillPhotonNtuple_;
 	std::string PhotonOrderOption_;
-	double EB_Seed_E_; //seed energy threshold setting for EB
-	double EE_Seed_E_; //seed energy threshold setting for EE
-	double pi0PtCut_barrel1;//0.0 < abs(eta) < 1.0
-	double pi0PtCut_barrel2;//1.0 < abs(eta) < 1.5
-	double pi0PtCut_endcap1;//1.5 < abs(eta) < 1.8
-	double pi0PtCut_endcap2;//1.8 < abs(eta)
-	double gPtCut_barrel1;
-	double gPtCut_barrel2;
-	double gPtCut_endcap1;
-	double gPtCut_endcap2;
-	double s4s9Cut_barrel1;
-	double s4s9Cut_barrel2;
-	double s4s9Cut_endcap1;
-	double s4s9Cut_endcap2;
-	double nxtal1Cut_barrel1;
-	double nxtal1Cut_barrel2;
-	double nxtal1Cut_endcap1;
-	double nxtal1Cut_endcap2;
-	double nxtal2Cut_barrel1;
-	double nxtal2Cut_barrel2;
-	double nxtal2Cut_endcap1;
-	double nxtal2Cut_endcap2;
+	double EB_Seed_E_Pi0_; //seed energy threshold setting for EB
+	double EE_Seed_E_Pi0_; //seed energy threshold setting for EE
+	double pairPtCut_barrel1_Pi0_;//0.0 < abs(eta) < 1.0
+	double pairPtCut_barrel2_Pi0_;//1.0 < abs(eta) < 1.5
+	double pairPtCut_endcap1_Pi0_;//1.5 < abs(eta) < 1.8
+	double pairPtCut_endcap2_Pi0_;//1.8 < abs(eta)
+	double gPtCut_barrel1_Pi0_;
+	double gPtCut_barrel2_Pi0_;
+	double gPtCut_endcap1_Pi0_;
+	double gPtCut_endcap2_Pi0_;
+	double s4s9Cut_barrel1_Pi0_;
+	double s4s9Cut_barrel2_Pi0_;
+	double s4s9Cut_endcap1_Pi0_;
+	double s4s9Cut_endcap2_Pi0_;
+	double nxtal1Cut_barrel1_Pi0_;
+	double nxtal1Cut_barrel2_Pi0_;
+	double nxtal1Cut_endcap1_Pi0_;
+	double nxtal1Cut_endcap2_Pi0_;
+	double nxtal2Cut_barrel1_Pi0_;
+	double nxtal2Cut_barrel2_Pi0_;
+	double nxtal2Cut_endcap1_Pi0_;
+	double nxtal2Cut_endcap2_Pi0_;
+
+	double EB_Seed_E_Eta_; //seed energy threshold setting for EB
+	double EE_Seed_E_Eta_; //seed energy threshold setting for EE
+	double pairPtCut_barrel1_Eta_;//0.0 < abs(eta) < 1.0
+	double pairPtCut_barrel2_Eta_;//1.0 < abs(eta) < 1.5
+	double pairPtCut_endcap1_Eta_;//1.5 < abs(eta) < 1.8
+	double pairPtCut_endcap2_Eta_;//1.8 < abs(eta)
+	double gPtCut_barrel1_Eta_;
+	double gPtCut_barrel2_Eta_;
+	double gPtCut_endcap1_Eta_;
+	double gPtCut_endcap2_Eta_;
+	double s4s9Cut_barrel1_Eta_;
+	double s4s9Cut_barrel2_Eta_;
+	double s4s9Cut_endcap1_Eta_;
+	double s4s9Cut_endcap2_Eta_;
+	double nxtal1Cut_barrel1_Eta_;
+	double nxtal1Cut_barrel2_Eta_;
+	double nxtal1Cut_endcap1_Eta_;
+	double nxtal1Cut_endcap2_Eta_;
+	double nxtal2Cut_barrel1_Eta_;
+	double nxtal2Cut_barrel2_Eta_;
+	double nxtal2Cut_endcap1_Eta_;
+	double nxtal2Cut_endcap2_Eta_;
 		
+	
 };
 
 #endif

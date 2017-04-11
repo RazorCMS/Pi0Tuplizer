@@ -52,33 +52,9 @@ Pi0Tuplizer::Pi0Tuplizer(const edm::ParameterSet& iConfig)
 	ESRecHitCollectionToken_Eta_    = consumes<ESRecHitCollection>(tag_ESRecHit_Eta_);
 
 	PhotonOrderOption_		= iConfig.getUntrackedParameter<std::string>("PhotonOrderOption");
-	EB_Seed_E_ 			= iConfig.getUntrackedParameter<double>("EB_Seed_E",0.2);
-	EE_Seed_E_ 			= iConfig.getUntrackedParameter<double>("EE_Seed_E",0.5);
 
-	pi0PtCut_barrel1 		= iConfig.getUntrackedParameter<double>("pi0PtCut_barrel1",2.6);
-	pi0PtCut_barrel2 		= iConfig.getUntrackedParameter<double>("pi0PtCut_barrel2",2.6);
-	pi0PtCut_endcap1 		= iConfig.getUntrackedParameter<double>("pi0PtCut_endcap1",3.0);
-	pi0PtCut_endcap2 		= iConfig.getUntrackedParameter<double>("pi0PtCut_endcap2",1.5);
-	
- 	gPtCut_barrel1 			= iConfig.getUntrackedParameter<double>("gPtCut_barrel1",1.3);
-	gPtCut_barrel2 			= iConfig.getUntrackedParameter<double>("gPtCut_barrel2",1.3);
-	gPtCut_endcap1 			= iConfig.getUntrackedParameter<double>("gPtCut_endcap1",0.95);
-	gPtCut_endcap2 			= iConfig.getUntrackedParameter<double>("gPtCut_endcap2",0.65);
-	
- 	s4s9Cut_barrel1 		= iConfig.getUntrackedParameter<double>("s4s9Cut_barrel1",0.83);
-	s4s9Cut_barrel2 		= iConfig.getUntrackedParameter<double>("s4s9Cut_barrel2",0.83);
-	s4s9Cut_endcap1 		= iConfig.getUntrackedParameter<double>("s4s9Cut_endcap1",0.95);
-	s4s9Cut_endcap2 		= iConfig.getUntrackedParameter<double>("s4s9Cut_endcap2",0.95);
-	
- 	nxtal1Cut_barrel1 		= iConfig.getUntrackedParameter<double>("nxtal1Cut_barrel1",0.);
-	nxtal1Cut_barrel2 		= iConfig.getUntrackedParameter<double>("nxtal1Cut_barrel2",0.);
-	nxtal1Cut_endcap1 		= iConfig.getUntrackedParameter<double>("nxtal1Cut_endcap1",0.);
-	nxtal1Cut_endcap2 		= iConfig.getUntrackedParameter<double>("nxtal1Cut_endcap2",0.);
-
-	nxtal2Cut_barrel1 		= iConfig.getUntrackedParameter<double>("nxtal2Cut_barrel1",0.);
-	nxtal2Cut_barrel2 		= iConfig.getUntrackedParameter<double>("nxtal2Cut_barrel2",0.);
-	nxtal2Cut_endcap1 		= iConfig.getUntrackedParameter<double>("nxtal2Cut_endcap1",0.);
-	nxtal2Cut_endcap2 		= iConfig.getUntrackedParameter<double>("nxtal2Cut_endcap2",0.);
+	loadCut_Pi0(iConfig);
+	loadCut_Eta(iConfig);
 		
 	ebtopology_ = new CaloTopology();
     	EcalBarrelHardcodedTopology* ebHTopology = new EcalBarrelHardcodedTopology();
@@ -173,7 +149,7 @@ void Pi0Tuplizer::recoPhoCluster_EB(bool isPi0_)
 
 	for(EBRecHitCollection::const_iterator itb= ebRecHit->begin(); itb != ebRecHit->end(); ++itb)
 	{
-		if(itb->energy() > EB_Seed_E_)  ebseeds.push_back( *itb );	
+		if(itb->energy() > (isPi0_?EB_Seed_E_Pi0_:EB_Seed_E_Eta_))  ebseeds.push_back( *itb );	
 	}
 	
 	//if(ebseeds.size() < 2) return;
@@ -279,13 +255,13 @@ void Pi0Tuplizer::recoPhoCluster_EB(bool isPi0_)
 		float ptClus = e3x3/cosh(clusPos.eta());
 		if(fabs( clusPos.eta() ) < 1.0 ) 
 		{
-			if(ptClus<gPtCut_barrel1) continue;
-			if(s4s9<s4s9Cut_barrel1) continue;
+			if(ptClus<(isPi0_?gPtCut_barrel1_Pi0_:gPtCut_barrel1_Eta_)) continue;
+			if(s4s9<(isPi0_?s4s9Cut_barrel1_Pi0_:s4s9Cut_barrel1_Eta_)) continue;
 		}
 		else if (fabs( clusPos.eta() ) < 1.5 ) 
 		{
-			if(ptClus<gPtCut_barrel2) continue;
-			if(s4s9<s4s9Cut_barrel2) continue;
+			if(ptClus<(isPi0_?gPtCut_barrel2_Pi0_:gPtCut_barrel2_Eta_)) continue;
+			if(s4s9<(isPi0_?s4s9Cut_barrel2_Pi0_:s4s9Cut_barrel2_Eta_)) continue;
 		}
 		else 
 		{
@@ -353,7 +329,7 @@ void Pi0Tuplizer::recoPhoCluster_EE(bool isPi0_)
 
 	for(EERecHitCollection::const_iterator itb= eeRecHit->begin(); itb != eeRecHit->end(); ++itb)
 	{
-		if(itb->energy() > EE_Seed_E_)  eeseends.push_back( *itb );	
+		if(itb->energy() > (isPi0_?EE_Seed_E_Pi0_:EE_Seed_E_Eta_))  eeseends.push_back( *itb );	
 	}
 	
 	//if(eeseends.size() < 2) return;
@@ -460,13 +436,13 @@ void Pi0Tuplizer::recoPhoCluster_EE(bool isPi0_)
 		if(fabs( clusPos.eta() ) < 1.5 ) continue;
 		else if(fabs( clusPos.eta() ) < 1.8 ) 
 		{
-			if(ptClus<gPtCut_endcap1) continue;
-			if(s4s9<s4s9Cut_endcap1) continue;
+			if(ptClus<(isPi0_?gPtCut_endcap1_Pi0_:gPtCut_endcap1_Eta_)) continue;
+			if(s4s9<(isPi0_?s4s9Cut_endcap1_Pi0_:s4s9Cut_endcap1_Eta_)) continue;
 		}
 		else if (fabs( clusPos.eta() ) < 3.0 ) 
 		{
-			if(ptClus<gPtCut_endcap2) continue;
-			if(s4s9<s4s9Cut_endcap2) continue;
+			if(ptClus<(isPi0_?gPtCut_endcap2_Pi0_:gPtCut_endcap2_Eta_)) continue;
+			if(s4s9<(isPi0_?s4s9Cut_endcap2_Pi0_:s4s9Cut_endcap2_Eta_)) continue;
 		}
 		else 
 		{
@@ -571,15 +547,15 @@ void Pi0Tuplizer::recoDiPhoEvents_EB(bool isPi0_)
 			//apply kinamatics cut on diphoton and nxtal cut			
 			if(fabs( pi0P4.eta() ) < 1.0 ) 
 			{
-				if(pi0P4.Pt()<pi0PtCut_barrel1) continue;
-				if((isPi0_? ebNxtal_Pi0_[ind1] : ebNxtal_Eta_[ind1])<nxtal1Cut_barrel1) continue;
-				if((isPi0_? ebNxtal_Pi0_[ind2] : ebNxtal_Eta_[ind2])<nxtal2Cut_barrel1) continue;
+				if(pi0P4.Pt()<(isPi0_?pairPtCut_barrel1_Pi0_:pairPtCut_barrel1_Eta_)) continue;
+				if((isPi0_? ebNxtal_Pi0_[ind1] : ebNxtal_Eta_[ind1])<(isPi0_?nxtal1Cut_barrel1_Pi0_:nxtal1Cut_barrel1_Eta_)) continue;
+				if((isPi0_? ebNxtal_Pi0_[ind2] : ebNxtal_Eta_[ind2])<(isPi0_?nxtal2Cut_barrel1_Pi0_:nxtal2Cut_barrel1_Eta_)) continue;
 			}
 			else if (fabs( pi0P4.eta() ) < 1.5 ) 
 			{
-				if(pi0P4.Pt()<pi0PtCut_barrel2) continue;
-				if((isPi0_? ebNxtal_Pi0_[ind1] : ebNxtal_Eta_[ind1])<nxtal1Cut_barrel2) continue;
-				if((isPi0_? ebNxtal_Pi0_[ind2] : ebNxtal_Eta_[ind2])<nxtal2Cut_barrel2) continue;
+				if(pi0P4.Pt()<(isPi0_?pairPtCut_barrel2_Pi0_:pairPtCut_barrel2_Eta_)) continue;
+				if((isPi0_? ebNxtal_Pi0_[ind1] : ebNxtal_Eta_[ind1])<(isPi0_?nxtal1Cut_barrel2_Pi0_:nxtal1Cut_barrel2_Eta_)) continue;
+				if((isPi0_? ebNxtal_Pi0_[ind2] : ebNxtal_Eta_[ind2])<(isPi0_?nxtal2Cut_barrel2_Pi0_:nxtal2Cut_barrel2_Eta_)) continue;
 			}
 			else 
 			{
@@ -711,15 +687,16 @@ void Pi0Tuplizer::recoDiPhoEvents_EE(bool isPi0_)
 			if(fabs( pi0P4.eta() ) < 1.5 ) continue;
 			else if(fabs( pi0P4.eta() ) < 1.8 ) 
 			{
-				if(pi0P4.Pt()<pi0PtCut_endcap1) continue;
-				if((isPi0_? eeNxtal_Pi0_[ind1] : eeNxtal_Eta_[ind1])<nxtal1Cut_endcap1) continue;
-				if((isPi0_? eeNxtal_Pi0_[ind2] : eeNxtal_Eta_[ind2])<nxtal2Cut_endcap1) continue;
+				if(pi0P4.Pt()<(isPi0_?pairPtCut_endcap1_Pi0_:pairPtCut_endcap1_Eta_)) continue;
+				if((isPi0_? eeNxtal_Pi0_[ind1] : eeNxtal_Eta_[ind1])<(isPi0_?nxtal1Cut_endcap1_Pi0_:nxtal1Cut_endcap1_Eta_)) continue;
+				if((isPi0_? eeNxtal_Pi0_[ind2] : eeNxtal_Eta_[ind2])<(isPi0_?nxtal2Cut_endcap1_Pi0_:nxtal2Cut_endcap1_Eta_)) continue;
+		
 			}
 			else if (fabs( pi0P4.eta() ) < 3.0 ) 
 			{
-				if(pi0P4.Pt()<pi0PtCut_endcap2) continue;
-				if((isPi0_? eeNxtal_Pi0_[ind1] : eeNxtal_Eta_[ind1])<nxtal1Cut_endcap2) continue;
-				if((isPi0_? eeNxtal_Pi0_[ind2] : eeNxtal_Eta_[ind2])<nxtal2Cut_endcap2) continue;
+				if(pi0P4.Pt()<(isPi0_?pairPtCut_endcap2_Pi0_:pairPtCut_endcap2_Eta_)) continue;
+				if((isPi0_? eeNxtal_Pi0_[ind1] : eeNxtal_Eta_[ind1])<(isPi0_?nxtal1Cut_endcap2_Pi0_:nxtal1Cut_endcap2_Eta_)) continue;
+				if((isPi0_? eeNxtal_Pi0_[ind2] : eeNxtal_Eta_[ind2])<(isPi0_?nxtal2Cut_endcap2_Pi0_:nxtal2Cut_endcap2_Eta_)) continue;
 			}
 			else 
 			{
@@ -917,6 +894,68 @@ void Pi0Tuplizer::loadEvent_Eta(const edm::Event& iEvent, const edm::EventSetup&
 
 }
 
+//load cut: pi0
+void Pi0Tuplizer::loadCut_Pi0(const edm::ParameterSet& iConfig)
+{
+	EB_Seed_E_Pi0_ 			= iConfig.getUntrackedParameter<double>("EB_Seed_E_Pi0_",0.5);
+	EE_Seed_E_Pi0_ 			= iConfig.getUntrackedParameter<double>("EE_Seed_E_Pi0_",0.5);
+
+	pairPtCut_barrel1_Pi0_ 		= iConfig.getUntrackedParameter<double>("pairPtCut_barrel1_Pi0_",2.6);
+	pairPtCut_barrel2_Pi0_ 		= iConfig.getUntrackedParameter<double>("pairPtCut_barrel2_Pi0_",2.6);
+	pairPtCut_endcap1_Pi0_ 		= iConfig.getUntrackedParameter<double>("pairPtCut_endcap1_Pi0_",3.0);
+	pairPtCut_endcap2_Pi0_ 		= iConfig.getUntrackedParameter<double>("pairPtCut_endcap2_Pi0_",1.5);
+	
+ 	gPtCut_barrel1_Pi0_		= iConfig.getUntrackedParameter<double>("gPtCut_barrel1_Pi0_",1.3);
+	gPtCut_barrel2_Pi0_ 		= iConfig.getUntrackedParameter<double>("gPtCut_barrel2_Pi0_",1.3);
+	gPtCut_endcap1_Pi0_ 		= iConfig.getUntrackedParameter<double>("gPtCut_endcap1_Pi0_",0.95);
+	gPtCut_endcap2_Pi0_ 		= iConfig.getUntrackedParameter<double>("gPtCut_endcap2_Pi0_",0.65);
+	
+ 	s4s9Cut_barrel1_Pi0_ 		= iConfig.getUntrackedParameter<double>("s4s9Cut_barrel1_Pi0_",0.83);
+	s4s9Cut_barrel2_Pi0_ 		= iConfig.getUntrackedParameter<double>("s4s9Cut_barrel2_Pi0_",0.83);
+	s4s9Cut_endcap1_Pi0_ 		= iConfig.getUntrackedParameter<double>("s4s9Cut_endcap1_Pi0_",0.95);
+	s4s9Cut_endcap2_Pi0_ 		= iConfig.getUntrackedParameter<double>("s4s9Cut_endcap2_Pi0_",0.95);
+	
+ 	nxtal1Cut_barrel1_Pi0_ 		= iConfig.getUntrackedParameter<double>("nxtal1Cut_barrel1_Pi0_",0.);
+	nxtal1Cut_barrel2_Pi0_ 		= iConfig.getUntrackedParameter<double>("nxtal1Cut_barrel2_Pi0_",0.);
+	nxtal1Cut_endcap1_Pi0_ 		= iConfig.getUntrackedParameter<double>("nxtal1Cut_endcap1_Pi0_",0.);
+	nxtal1Cut_endcap2_Pi0_ 		= iConfig.getUntrackedParameter<double>("nxtal1Cut_endcap2_Pi0_",0.);
+
+	nxtal2Cut_barrel1_Pi0_ 		= iConfig.getUntrackedParameter<double>("nxtal2Cut_barrel1_Pi0_",0.);
+	nxtal2Cut_barrel2_Pi0_ 		= iConfig.getUntrackedParameter<double>("nxtal2Cut_barrel2_Pi0_",0.);
+	nxtal2Cut_endcap1_Pi0_ 		= iConfig.getUntrackedParameter<double>("nxtal2Cut_endcap1_Pi0_",0.);
+	nxtal2Cut_endcap2_Pi0_ 		= iConfig.getUntrackedParameter<double>("nxtal2Cut_endcap2_Pi0_",0.);
+}
+
+void Pi0Tuplizer::loadCut_Eta(const edm::ParameterSet& iConfig)
+{
+	EB_Seed_E_Eta_ 			= iConfig.getUntrackedParameter<double>("EB_Seed_E_Eta_",0.5);
+	EE_Seed_E_Eta_ 			= iConfig.getUntrackedParameter<double>("EE_Seed_E_Eta_",0.5);
+
+	pairPtCut_barrel1_Eta_ 		= iConfig.getUntrackedParameter<double>("pairPtCut_barrel1_Eta_",2.6);
+	pairPtCut_barrel2_Eta_ 		= iConfig.getUntrackedParameter<double>("pairPtCut_barrel2_Eta_",2.6);
+	pairPtCut_endcap1_Eta_ 		= iConfig.getUntrackedParameter<double>("pairPtCut_endcap1_Eta_",3.0);
+	pairPtCut_endcap2_Eta_ 		= iConfig.getUntrackedParameter<double>("pairPtCut_endcap2_Eta_",1.5);
+	
+ 	gPtCut_barrel1_Eta_		= iConfig.getUntrackedParameter<double>("gPtCut_barrel1_Eta_",1.3);
+	gPtCut_barrel2_Eta_ 		= iConfig.getUntrackedParameter<double>("gPtCut_barrel2_Eta_",1.3);
+	gPtCut_endcap1_Eta_ 		= iConfig.getUntrackedParameter<double>("gPtCut_endcap1_Eta_",0.95);
+	gPtCut_endcap2_Eta_ 		= iConfig.getUntrackedParameter<double>("gPtCut_endcap2_Eta_",0.65);
+	
+ 	s4s9Cut_barrel1_Eta_ 		= iConfig.getUntrackedParameter<double>("s4s9Cut_barrel1_Eta_",0.83);
+	s4s9Cut_barrel2_Eta_ 		= iConfig.getUntrackedParameter<double>("s4s9Cut_barrel2_Eta_",0.83);
+	s4s9Cut_endcap1_Eta_ 		= iConfig.getUntrackedParameter<double>("s4s9Cut_endcap1_Eta_",0.95);
+	s4s9Cut_endcap2_Eta_ 		= iConfig.getUntrackedParameter<double>("s4s9Cut_endcap2_Eta_",0.95);
+	
+ 	nxtal1Cut_barrel1_Eta_ 		= iConfig.getUntrackedParameter<double>("nxtal1Cut_barrel1_Eta_",0.);
+	nxtal1Cut_barrel2_Eta_ 		= iConfig.getUntrackedParameter<double>("nxtal1Cut_barrel2_Eta_",0.);
+	nxtal1Cut_endcap1_Eta_ 		= iConfig.getUntrackedParameter<double>("nxtal1Cut_endcap1_Eta_",0.);
+	nxtal1Cut_endcap2_Eta_ 		= iConfig.getUntrackedParameter<double>("nxtal1Cut_endcap2_Eta_",0.);
+
+	nxtal2Cut_barrel1_Eta_ 		= iConfig.getUntrackedParameter<double>("nxtal2Cut_barrel1_Eta_",0.);
+	nxtal2Cut_barrel2_Eta_ 		= iConfig.getUntrackedParameter<double>("nxtal2Cut_barrel2_Eta_",0.);
+	nxtal2Cut_endcap1_Eta_ 		= iConfig.getUntrackedParameter<double>("nxtal2Cut_endcap1_Eta_",0.);
+	nxtal2Cut_endcap2_Eta_ 		= iConfig.getUntrackedParameter<double>("nxtal2Cut_endcap2_Eta_",0.);
+}
 
 // ------------ method called once each job just before starting event loop  ------------
 void Pi0Tuplizer::beginJob()
