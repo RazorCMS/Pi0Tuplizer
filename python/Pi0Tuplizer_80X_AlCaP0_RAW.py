@@ -51,7 +51,7 @@ process.source = cms.Source('PoolSource',
 
 #define output file
 process.TFileService = cms.Service("TFileService", 
-    fileName = cms.string("pi0Ntuple.root"),
+    fileName = cms.string("pi0Ntuple_hlt.root"),
     closeFileFast = cms.untracked.bool(True)
 )
 
@@ -194,12 +194,17 @@ process.dummyDigisEta = cms.EDProducer('DummyRechitDigis',
 
 #DIGI to UNCALIB
 import RecoLocalCalo.EcalRecProducers.ecalMultiFitUncalibRecHit_cfi
-process.ecalMultiFitUncalibRecHitPi0 = RecoLocalCalo.EcalRecProducers.ecalMultiFitUncalibRecHit_cfi.ecalMultiFitUncalibRecHit.clone()
+
+import hltEcalUncalibRecHit_cfi
+
+#process.ecalMultiFitUncalibRecHitPi0 = RecoLocalCalo.EcalRecProducers.ecalMultiFitUncalibRecHit_cfi.ecalMultiFitUncalibRecHit.clone()
+process.ecalMultiFitUncalibRecHitPi0 = hltEcalUncalibRecHit_cfi.hltEcalUncalibRecHit.clone()
 process.ecalMultiFitUncalibRecHitPi0.EBdigiCollection = cms.InputTag('dummyDigisPi0','dummyBarrelDigis','Pi0Tuplizer')
 process.ecalMultiFitUncalibRecHitPi0.EEdigiCollection = cms.InputTag('dummyDigisPi0','dummyEndcapDigis','Pi0Tuplizer')
 process.ecalMultiFitUncalibRecHitPi0.algoPSet.useLumiInfoRunHeader = cms.bool( False )
 
-process.ecalMultiFitUncalibRecHitEta = RecoLocalCalo.EcalRecProducers.ecalMultiFitUncalibRecHit_cfi.ecalMultiFitUncalibRecHit.clone()
+#process.ecalMultiFitUncalibRecHitEta = RecoLocalCalo.EcalRecProducers.ecalMultiFitUncalibRecHit_cfi.ecalMultiFitUncalibRecHit.clone()
+process.ecalMultiFitUncalibRecHitEta = hltEcalUncalibRecHit_cfi.hltEcalUncalibRecHit.clone()
 process.ecalMultiFitUncalibRecHitEta.EBdigiCollection = cms.InputTag('dummyDigisEta','dummyBarrelDigis','Pi0Tuplizer')
 process.ecalMultiFitUncalibRecHitEta.EEdigiCollection = cms.InputTag('dummyDigisEta','dummyEndcapDigis','Pi0Tuplizer')
 process.ecalMultiFitUncalibRecHitEta.algoPSet.useLumiInfoRunHeader = cms.bool( False )
@@ -238,13 +243,6 @@ process.ecalRecHitEta = cms.EDProducer("EcalRecHitProducer",
 				)
 
 
-#process.ecalRecHit.killDeadChannels = cms.bool( False )
-#process.ecalRecHit.recoverEBVFE = cms.bool( False )
-#process.ecalRecHit.recoverEEVFE = cms.bool( False )
-#process.ecalRecHit.recoverEBFE = cms.bool( False )
-#process.ecalRecHit.recoverEEFE = cms.bool( False )
-#process.ecalRecHit.recoverEEIsolatedChannels = cms.bool( False )
-#process.ecalRecHit.recoverEBIsolatedChannels = cms.bool( False )
 
 process.ecalLocalRecoSequence = cms.Sequence(process.ecalRecHitPi0+process.ecalRecHitEta)
 
