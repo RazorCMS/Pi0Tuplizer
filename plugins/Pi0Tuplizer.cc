@@ -564,6 +564,51 @@ void Pi0Tuplizer::recoDiPhoEvents_EB(bool isPi0_)
 
 			if( g1P4.eta() == g2P4.eta() && g1P4.phi() == g2P4.phi() ) continue;
 			
+			//calculate diphoton isolation
+			double isoPi0_temp = 0.0;
+			double isoG1_temp = 0.0;
+			double isoG2_temp = 0.0;
+
+			for(std::vector<CaloCluster>::const_iterator giso  = (isPi0_? ebclusters_Pi0_.begin() : ebclusters_Eta_.begin() ); giso != (isPi0_? ebclusters_Pi0_.end() : ebclusters_Eta_.end()); ++giso)
+			{
+				
+				double dR_iso_Pair = GetDeltaR(pi0P4.Eta(), giso->eta(), pi0P4.Phi(), giso->phi());	
+				double dR_iso_G1 = GetDeltaR(g1P4.Eta(), giso->eta(), g1P4.Phi(), giso->phi());	
+				double dR_iso_G2 = GetDeltaR(g2P4.Eta(), giso->eta(), g2P4.Phi(), giso->phi());	
+				double dEta_iso_Pair = fabs(pi0P4.Eta() - giso->eta());
+				double dEta_iso_G1 = fabs(g1P4.Eta() - giso->eta());
+				double dEta_iso_G2 = fabs(g2P4.Eta() - giso->eta());
+				double pTiso = giso->energy()/cosh(giso->eta());
+
+				if(giso->seed()!=g1->seed() && 
+					dR_iso_G1 <= (isPi0_?isoGammaBeltdR_Zone_Pi0_:isoGammaBeltdR_Zone_Eta_) && 
+					dEta_iso_G1 <= (isPi0_?isoGammaBeltdEta_Zone_Pi0_:isoGammaBeltdEta_Zone_Eta_)
+				  )
+				{
+					isoG1_temp += pTiso;
+				}
+			
+				if(giso->seed()!=g2->seed() && 
+					dR_iso_G2 <= (isPi0_?isoGammaBeltdR_Zone_Pi0_:isoGammaBeltdR_Zone_Eta_) && 
+					dEta_iso_G2 <= (isPi0_?isoGammaBeltdEta_Zone_Pi0_:isoGammaBeltdEta_Zone_Eta_)
+				  )
+				{
+					isoG2_temp += pTiso;
+				}
+			
+
+				if(giso->seed()!=g1->seed() && 
+					giso->seed()!=g2->seed() &&
+					dR_iso_Pair <= (isPi0_?isoPairBeltdR_Zone_Pi0_:isoPairBeltdR_Zone_Eta_) && 
+					dEta_iso_Pair <= (isPi0_?isoPairBeltdEta_Zone_Pi0_:isoPairBeltdEta_Zone_Eta_)
+				  )
+				{
+					isoPi0_temp += pTiso;
+				}
+			
+			}	
+
+
 			//fill pi0/eta ntuple
 			if(N_Pair_rec >= NPI0MAX-1) break; // too many pi0s
 			if( FillDiPhotonNtuple_ && pi0P4.mass() > ((isPi0_)?0.03:0.2) && pi0P4.mass() < ((isPi0_)?0.25:1.) )
@@ -571,9 +616,20 @@ void Pi0Tuplizer::recoDiPhoEvents_EB(bool isPi0_)
 				fromPi0[N_Pair_rec]  =  isPi0_;
 				mPi0_rec[N_Pair_rec]  =  pi0P4.mass();
 				ptPi0_rec[N_Pair_rec] =  pi0P4.Pt();
+				isoPi0_rec[N_Pair_rec] =  isoPi0_temp;
 				etaPi0_rec[N_Pair_rec] =  pi0P4.Eta();
 				phiPi0_rec[N_Pair_rec] =  pi0P4.Phi();
-	
+
+				if(Inverted)
+				{
+					isoG1_rec[N_Pair_rec] = isoG2_temp;
+					isoG2_rec[N_Pair_rec] = isoG1_temp;
+				}
+				else
+				{
+					isoG1_rec[N_Pair_rec] = isoG1_temp;
+					isoG2_rec[N_Pair_rec] = isoG2_temp;
+				}	
 				deltaRG1G2_rec[N_Pair_rec] = GetDeltaR( g1P4.eta(), g2P4.eta(), g1P4.phi(), g2P4.phi() );
 
 				EBDetId  id_1(g1->seed());
@@ -641,6 +697,7 @@ void Pi0Tuplizer::recoDiPhoEvents_EB(bool isPi0_)
 				N_Pair_rec ++;			
 			}
 			if(N_Pair_rec >= NPI0MAX-1) break; // too many pi0s
+		
 		}//end loop of g2	
 	}//end loop of g1
 }
@@ -705,6 +762,51 @@ void Pi0Tuplizer::recoDiPhoEvents_EE(bool isPi0_)
 
 			if( g1P4.eta() == g2P4.eta() && g1P4.phi() == g2P4.phi() ) continue;
 			
+			//calculate diphoton isolation
+			double isoPi0_temp = 0.0;
+			double isoG1_temp = 0.0;
+			double isoG2_temp = 0.0;
+
+			for(std::vector<CaloCluster>::const_iterator giso  = (isPi0_? eeclusters_Pi0_.begin() : eeclusters_Eta_.begin() ); giso != (isPi0_? eeclusters_Pi0_.end() : eeclusters_Eta_.end()); ++giso)
+			{
+				
+				double dR_iso_Pair = GetDeltaR(pi0P4.Eta(), giso->eta(), pi0P4.Phi(), giso->phi());	
+				double dR_iso_G1 = GetDeltaR(g1P4.Eta(), giso->eta(), g1P4.Phi(), giso->phi());	
+				double dR_iso_G2 = GetDeltaR(g2P4.Eta(), giso->eta(), g2P4.Phi(), giso->phi());	
+				double dEta_iso_Pair = fabs(pi0P4.Eta() - giso->eta());
+				double dEta_iso_G1 = fabs(g1P4.Eta() - giso->eta());
+				double dEta_iso_G2 = fabs(g2P4.Eta() - giso->eta());
+				double pTiso = giso->energy()/cosh(giso->eta());
+
+				if(giso->seed()!=g1->seed() && 
+					dR_iso_G1 <= (isPi0_?isoGammaBeltdR_Zone_Pi0_:isoGammaBeltdR_Zone_Eta_) && 
+					dEta_iso_G1 <= (isPi0_?isoGammaBeltdEta_Zone_Pi0_:isoGammaBeltdEta_Zone_Eta_)
+				  )
+				{
+					isoG1_temp += pTiso;
+				}
+			
+				if(giso->seed()!=g2->seed() && 
+					dR_iso_G2 <= (isPi0_?isoGammaBeltdR_Zone_Pi0_:isoGammaBeltdR_Zone_Eta_) && 
+					dEta_iso_G2 <= (isPi0_?isoGammaBeltdEta_Zone_Pi0_:isoGammaBeltdEta_Zone_Eta_)
+				  )
+				{
+					isoG2_temp += pTiso;
+				}
+			
+
+				if(giso->seed()!=g1->seed() && 
+					giso->seed()!=g2->seed() &&
+					dR_iso_Pair <= (isPi0_?isoPairBeltdR_Zone_Pi0_:isoPairBeltdR_Zone_Eta_) && 
+					dEta_iso_Pair <= (isPi0_?isoPairBeltdEta_Zone_Pi0_:isoPairBeltdEta_Zone_Eta_)
+				  )
+				{
+					isoPi0_temp += pTiso;
+				}
+			
+			}	
+
+
 			//fill pi0/eta ntuple
 			if(N_Pair_rec >= NPI0MAX-1) break; // too many pi0s
 			if( FillDiPhotonNtuple_ && pi0P4.mass() > ((isPi0_)?0.03:0.2) && pi0P4.mass() < ((isPi0_)?0.25:1.) )
@@ -712,9 +814,21 @@ void Pi0Tuplizer::recoDiPhoEvents_EE(bool isPi0_)
 				fromPi0[N_Pair_rec]  =  isPi0_;
 				mPi0_rec[N_Pair_rec]  =  pi0P4.mass();
 				ptPi0_rec[N_Pair_rec] =  pi0P4.Pt();
-				etaPi0_rec[N_Pair_rec] =  pi0P4.Eta();
-				phiPi0_rec[N_Pair_rec] =  pi0P4.Phi();
-	
+				isoPi0_rec[N_Pair_rec] =  isoPi0_temp;
+                                etaPi0_rec[N_Pair_rec] =  pi0P4.Eta();
+                                phiPi0_rec[N_Pair_rec] =  pi0P4.Phi();
+
+                                if(Inverted)
+                                {
+                                        isoG1_rec[N_Pair_rec] = isoG2_temp;
+                                        isoG2_rec[N_Pair_rec] = isoG1_temp;
+                                }
+                                else
+                                {
+                                        isoG1_rec[N_Pair_rec] = isoG1_temp;
+                                        isoG2_rec[N_Pair_rec] = isoG2_temp;
+                                }
+
 				deltaRG1G2_rec[N_Pair_rec] = GetDeltaR( g1P4.eta(), g2P4.eta(), g1P4.phi(), g2P4.phi() );
 
 				EEDetId  id_1(g1->seed());
@@ -924,6 +1038,12 @@ void Pi0Tuplizer::loadCut_Pi0(const edm::ParameterSet& iConfig)
 	nxtal2Cut_barrel2_Pi0_ 		= iConfig.getUntrackedParameter<double>("nxtal2Cut_barrel2_Pi0_",0.);
 	nxtal2Cut_endcap1_Pi0_ 		= iConfig.getUntrackedParameter<double>("nxtal2Cut_endcap1_Pi0_",0.);
 	nxtal2Cut_endcap2_Pi0_ 		= iConfig.getUntrackedParameter<double>("nxtal2Cut_endcap2_Pi0_",0.);
+
+	isoGammaBeltdR_Zone_Pi0_	= iConfig.getUntrackedParameter<double>("isoGammaBeltdR_Zone_Pi0_",0.2);
+	isoPairBeltdR_Zone_Pi0_		= iConfig.getUntrackedParameter<double>("isoPairBeltdR_Zone_Pi0_",0.2);
+	isoGammaBeltdEta_Zone_Pi0_	= iConfig.getUntrackedParameter<double>("isoGammaBeltdEta_Zone_Pi0_",0.05);
+	isoPairBeltdEta_Zone_Pi0_	= iConfig.getUntrackedParameter<double>("isoPairBeltdEta_Zone_Pi0_",0.05);
+
 }
 
 void Pi0Tuplizer::loadCut_Eta(const edm::ParameterSet& iConfig)
@@ -955,6 +1075,12 @@ void Pi0Tuplizer::loadCut_Eta(const edm::ParameterSet& iConfig)
 	nxtal2Cut_barrel2_Eta_ 		= iConfig.getUntrackedParameter<double>("nxtal2Cut_barrel2_Eta_",0.);
 	nxtal2Cut_endcap1_Eta_ 		= iConfig.getUntrackedParameter<double>("nxtal2Cut_endcap1_Eta_",0.);
 	nxtal2Cut_endcap2_Eta_ 		= iConfig.getUntrackedParameter<double>("nxtal2Cut_endcap2_Eta_",0.);
+
+	isoGammaBeltdR_Zone_Eta_	= iConfig.getUntrackedParameter<double>("isoGammaBeltdR_Zone_Eta_",0.3);
+	isoPairBeltdR_Zone_Eta_		= iConfig.getUntrackedParameter<double>("isoPairBeltdR_Zone_Eta_",0.3);
+	isoGammaBeltdEta_Zone_Eta_	= iConfig.getUntrackedParameter<double>("isoGammaBeltdEta_Zone_Eta_",0.1);
+	isoPairBeltdEta_Zone_Eta_	= iConfig.getUntrackedParameter<double>("isoPairBeltdEta_Zone_Eta_",0.1);
+
 }
 
 // ------------ method called once each job just before starting event loop  ------------
@@ -1034,8 +1160,11 @@ void Pi0Tuplizer::setBranches()
 	Pi0Events->Branch( "fromPi0", fromPi0, "fromPi0[N_Pair_rec]/O");		
 	Pi0Events->Branch( "mPi0_rec", mPi0_rec, "mPi0_rec[N_Pair_rec]/F");		
 	Pi0Events->Branch( "ptPi0_rec", ptPi0_rec, "ptPi0_rec[N_Pair_rec]/F");		
+	Pi0Events->Branch( "isoPi0_rec", isoPi0_rec, "isoPi0_rec[N_Pair_rec]/F");		
 	Pi0Events->Branch( "etaPi0_rec", etaPi0_rec, "etaPi0_rec[N_Pair_rec]/F");		
 	Pi0Events->Branch( "phiPi0_rec", phiPi0_rec, "phiPi0_rec[N_Pair_rec]/F");		
+	Pi0Events->Branch( "isoG1_rec", isoG1_rec, "isoG1_rec[N_Pair_rec]/F");		
+	Pi0Events->Branch( "isoG2_rec", isoG2_rec, "isoG2_rec[N_Pair_rec]/F");		
 	Pi0Events->Branch( "enG1_rec", enG1_rec, "enG1_rec[N_Pair_rec]/F");		
 	Pi0Events->Branch( "enG2_rec", enG2_rec, "enG2_rec[N_Pair_rec]/F");		
 	Pi0Events->Branch( "etaG1_rec", etaG1_rec, "etaG1_rec[N_Pair_rec]/F");		
@@ -1135,6 +1264,9 @@ void Pi0Tuplizer::resetBranches()
 		fromPi0[i] = false;
 		mPi0_rec[i] = 0;
 		ptPi0_rec[i] = 0;
+		isoPi0_rec[i] = 0;
+		isoG1_rec[i] = 0;
+		isoG2_rec[i] = 0;
 		etaPi0_rec[i] = 0;
 		phiPi0_rec[i] = 0;
 		enG1_rec[i] = 0;

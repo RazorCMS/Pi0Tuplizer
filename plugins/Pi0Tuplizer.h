@@ -167,8 +167,11 @@ private:
 	bool 	fromPi0[NPI0MAX];	
 	float 	mPi0_rec[NPI0MAX];	
 	float 	ptPi0_rec[NPI0MAX];	
+	float 	isoPi0_rec[NPI0MAX];	
 	float 	etaPi0_rec[NPI0MAX];	
 	float 	phiPi0_rec[NPI0MAX];	
+	float 	isoG1_rec[NPI0MAX];	
+	float 	isoG2_rec[NPI0MAX];	
 	float 	enG1_rec[NPI0MAX];	
 	float 	enG2_rec[NPI0MAX];	
 	float 	etaG1_rec[NPI0MAX];	
@@ -331,8 +334,15 @@ private:
 	double nxtal2Cut_barrel2_Eta_;
 	double nxtal2Cut_endcap1_Eta_;
 	double nxtal2Cut_endcap2_Eta_;
-		
-	
+
+	double isoGammaBeltdR_Zone_Pi0_;
+	double isoGammaBeltdEta_Zone_Pi0_;
+	double isoPairBeltdR_Zone_Pi0_;
+	double isoPairBeltdEta_Zone_Pi0_;
+	double isoGammaBeltdR_Zone_Eta_;
+	double isoGammaBeltdEta_Zone_Eta_;
+	double isoPairBeltdR_Zone_Eta_;
+	double isoPairBeltdEta_Zone_Eta_;
 };
 
 #endif

@@ -51,7 +51,7 @@ process.source = cms.Source('PoolSource',
 
 #define output file
 process.TFileService = cms.Service("TFileService", 
-    fileName = cms.string("pi0Ntuple_hlt.root"),
+    fileName = cms.string("pi0Ntuple.root"),
     closeFileFast = cms.untracked.bool(True)
 )
 
@@ -108,7 +108,15 @@ nxtal1Cut_endcap2_Eta_ = cms.untracked.double(0.),
 nxtal2Cut_barrel1_Eta_ = cms.untracked.double(0.),
 nxtal2Cut_barrel2_Eta_ = cms.untracked.double(0.),
 nxtal2Cut_endcap1_Eta_ = cms.untracked.double(0.),
-nxtal2Cut_endcap2_Eta_ = cms.untracked.double(0.)
+nxtal2Cut_endcap2_Eta_ = cms.untracked.double(0.),
+isoGammaBeltdR_Zone_Pi0_	= cms.untracked.double(0.2),
+isoGammaBeltdR_Zone_Eta_ 	= cms.untracked.double(0.2),
+isoPairBeltdR_Zone_Pi0_		= cms.untracked.double(0.2),
+isoPairBeltdR_Zone_Eta_		= cms.untracked.double(0.3),
+isoGammaBeltdEta_Zone_Pi0_ 	= cms.untracked.double(0.05),
+isoGammaBeltdEta_Zone_Eta_ 	= cms.untracked.double(0.1),
+isoPairBeltdEta_Zone_Pi0_  	= cms.untracked.double(0.05),
+isoPairBeltdEta_Zone_Eta_  	= cms.untracked.double(0.1)
 )
 
 #########################paratmeters for the tuplizer##############################
