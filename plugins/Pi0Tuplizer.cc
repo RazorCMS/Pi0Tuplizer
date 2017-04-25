@@ -608,6 +608,10 @@ void Pi0Tuplizer::recoDiPhoEvents_EB(bool isPi0_)
 			
 			}	
 
+			//apply isolation cut
+			if(isoPi0_temp > isoPairCut_) continue;
+			if(isoG1_temp > isoGammaCut_) continue;
+			if(isoG2_temp > isoGammaCut_) continue;
 
 			//fill pi0/eta ntuple
 			if(N_Pair_rec >= NPI0MAX-1) break; // too many pi0s
@@ -805,6 +809,11 @@ void Pi0Tuplizer::recoDiPhoEvents_EE(bool isPi0_)
 				}
 			
 			}	
+
+			//apply isolation cut
+			if(isoPi0_temp > isoPairCut_) continue;
+			if(isoG1_temp > isoGammaCut_) continue;
+			if(isoG2_temp > isoGammaCut_) continue;
 
 
 			//fill pi0/eta ntuple
@@ -1043,6 +1052,8 @@ void Pi0Tuplizer::loadCut_Pi0(const edm::ParameterSet& iConfig)
 	isoPairBeltdR_Zone_Pi0_		= iConfig.getUntrackedParameter<double>("isoPairBeltdR_Zone_Pi0_",0.2);
 	isoGammaBeltdEta_Zone_Pi0_	= iConfig.getUntrackedParameter<double>("isoGammaBeltdEta_Zone_Pi0_",0.05);
 	isoPairBeltdEta_Zone_Pi0_	= iConfig.getUntrackedParameter<double>("isoPairBeltdEta_Zone_Pi0_",0.05);
+	isoPairCut_	= iConfig.getUntrackedParameter<double>("isoPairCut_",0.05);
+	isoGammaCut_	= iConfig.getUntrackedParameter<double>("isoGammaCut_",0.05);
 
 }
 

@@ -116,7 +116,9 @@ isoPairBeltdR_Zone_Eta_		= cms.untracked.double(0.3),
 isoGammaBeltdEta_Zone_Pi0_ 	= cms.untracked.double(0.05),
 isoGammaBeltdEta_Zone_Eta_ 	= cms.untracked.double(0.1),
 isoPairBeltdEta_Zone_Pi0_  	= cms.untracked.double(0.05),
-isoPairBeltdEta_Zone_Eta_  	= cms.untracked.double(0.1)
+isoPairBeltdEta_Zone_Eta_  	= cms.untracked.double(0.1),
+isoPairCut_			= cms.untracked.double(999.9),
+isoGammaCut_			= cms.untracked.double(999.9)
 )
 
 #########################paratmeters for the tuplizer##############################

@@ -343,6 +343,8 @@ private:
 	double isoGammaBeltdEta_Zone_Eta_;
 	double isoPairBeltdR_Zone_Eta_;
 	double isoPairBeltdEta_Zone_Eta_;
+	double isoPairCut_;
+	double isoGammaCut_;
 };
 
 #endif
