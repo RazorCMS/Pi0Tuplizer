@@ -615,7 +615,7 @@ void Pi0Tuplizer::recoDiPhoEvents_EB(bool isPi0_)
 
 			//fill pi0/eta ntuple
 			if(N_Pair_rec >= NPI0MAX-1) break; // too many pi0s
-			if( FillDiPhotonNtuple_ && pi0P4.mass() > ((isPi0_)?0.03:0.2) && pi0P4.mass() < ((isPi0_)?0.25:1.) )
+			if( FillDiPhotonNtuple_ && pi0P4.mass() > ((isPi0_)?0.03:0.25) && pi0P4.mass() < ((isPi0_)?0.25:1.) )
 			{
 				fromPi0[N_Pair_rec]  =  isPi0_;
 				mPi0_rec[N_Pair_rec]  =  pi0P4.mass();
@@ -818,7 +818,7 @@ void Pi0Tuplizer::recoDiPhoEvents_EE(bool isPi0_)
 
 			//fill pi0/eta ntuple
 			if(N_Pair_rec >= NPI0MAX-1) break; // too many pi0s
-			if( FillDiPhotonNtuple_ && pi0P4.mass() > ((isPi0_)?0.03:0.2) && pi0P4.mass() < ((isPi0_)?0.25:1.) )
+			if( FillDiPhotonNtuple_ && pi0P4.mass() > ((isPi0_)?0.03:0.25) && pi0P4.mass() < ((isPi0_)?0.25:1.) )
 			{
 				fromPi0[N_Pair_rec]  =  isPi0_;
 				mPi0_rec[N_Pair_rec]  =  pi0P4.mass();
