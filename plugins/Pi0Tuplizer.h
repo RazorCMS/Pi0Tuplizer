@@ -45,10 +45,13 @@
 #include "DataFormats/DetId/interface/DetId.h"
 #include "DataFormats/EcalDetId/interface/EBDetId.h"
 #include "DataFormats/EcalDetId/interface/EEDetId.h"
+#include "DataFormats/EcalDetId/interface/ESDetId.h"
 #include "DataFormats/EcalDetId/interface/EcalSubdetector.h"
 #include "DataFormats/Math/interface/LorentzVector.h"
 #include "DataFormats/Provenance/interface/Timestamp.h"
 #include "DataFormats/Provenance/interface/EventAuxiliary.h"
+#include "DataFormats/Common/interface/Handle.h"
+#include "DataFormats/EgammaReco/interface/PreshowerCluster.h"
 
 #include "RecoEcal/EgammaCoreTools/interface/EcalRecHitLess.h"
 #include "RecoEcal/EgammaCoreTools/interface/PositionCalc.h"
@@ -66,10 +69,15 @@
 #include "Geometry/Records/interface/CaloGeometryRecord.h"
 #include "Geometry/EcalAlgo/interface/EcalPreshowerGeometry.h"
 
+#include "RecoCaloTools/Navigation/interface/EcalPreshowerNavigator.h"
+
 
 using namespace std;
 using namespace reco;
 using namespace edm;
+
+typedef std::map<DetId, EcalRecHit> RecHitsMap;
+typedef std::set<DetId> HitsID;
 
 #define NL1SEED 300
 #define NPI0MAX 300
@@ -229,6 +237,7 @@ private:
 	CaloTopology *ebtopology_;
       	CaloTopology *eetopology_;
       	CaloSubdetectorTopology *estopology_;
+	const EcalPreshowerGeometry *esGeometry_;
 	const CaloGeometry* geometry;
 
 	vector<float>  ebSeedTime_Pi0_;
@@ -345,6 +354,27 @@ private:
 	double isoPairBeltdEta_Zone_Eta_;
 	double isoPairCut_;
 	double isoGammaCut_;
+};
+
+class PreshowerTools{
+    public:
+	PreshowerTools(const CaloGeometry* extGeom, CaloSubdetectorTopology* topology_p,  edm::Handle< ESRecHitCollection > & esHandle);
+      	PreshowerCluster makeOnePreshowerCluster(int stripwindow, ESDetId *strip);
+	static const double mip_;
+      	static const double gamma_;
+      	static const double calib_planeX_;
+      	static const double calib_planeY_;
+      	static const int clusterwindowsize_;
+
+
+    private:
+      	const CaloGeometry* geom_;
+      	CaloSubdetectorTopology *estopology_;
+      	std::vector<ESDetId> esroad_2d;
+	HitsID  used_strips;
+	RecHitsMap  rechits_map;
+	void findESRoad(int stripwindow, ESDetId strip, EcalPreshowerNavigator theESNav, int plane);
+      	bool goodStrip(RecHitsMap::iterator candidate_it);
 };
 
 #endif

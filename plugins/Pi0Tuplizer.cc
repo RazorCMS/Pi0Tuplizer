@@ -13,6 +13,13 @@ using namespace std;
 #define DEBUG
 
 
+const double PreshowerTools::mip_ = 8.108e-05;
+const double PreshowerTools::gamma_ = 0.024;
+const double PreshowerTools::calib_planeX_ = 1.0;
+const double PreshowerTools::calib_planeY_ = 0.7;
+const int    PreshowerTools::clusterwindowsize_ = 15;
+
+
 class ecalRecHitLess : public std::binary_function<EcalRecHit, EcalRecHit, bool>
 {
 public:
@@ -136,8 +143,8 @@ void Pi0Tuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 #ifdef DEBUG
 //	cout<<"N_Pho: "<<N_Pho_rec<<"  N_ebRecHit: "<<N_ebRecHit<<"   N_eeRecHit:  "<<N_eeRecHit<<endl;
 #endif
-	//if(FillDiPhotonNtuple_ && N_Pair_rec > 0) Pi0Events->Fill();
-	Pi0Events->Fill();
+	if(FillDiPhotonNtuple_ && N_Pair_rec > 0) Pi0Events->Fill();
+	//Pi0Events->Fill();
 
 }
 
@@ -325,6 +332,8 @@ void Pi0Tuplizer::recoPhoCluster_EB(bool isPi0_)
 void Pi0Tuplizer::recoPhoCluster_EE(bool isPi0_)
 {
 
+	PreshowerTools esClusteringAlgo(geometry, estopology_, esRecHit);
+
 	std::vector<EcalRecHit> eeseends;
 
 	for(EERecHitCollection::const_iterator itb= eeRecHit->begin(); itb != eeRecHit->end(); ++itb)
@@ -448,10 +457,44 @@ void Pi0Tuplizer::recoPhoCluster_EE(bool isPi0_)
 		{
 			continue;
 		}
+
+// add preshower energy
+		double deltaE = 0.0;
+		if(fabs(clusPos.eta())>1.7  &&  fabs(clusPos.eta())<2.55)
+		{
+			double X = clusPos.x();
+			double Y = clusPos.y();
+			double Z = clusPos.z();
+			const GlobalPoint point(X,Y,Z);
+
+			DetId tmp1 = esGeometry_->getClosestCellInPlane(point,1);
+        		DetId tmp2 = esGeometry_->getClosestCellInPlane(point,2);
+
+			if ((tmp1.rawId()!=0) && (tmp2.rawId()!=0))
+        		{
+				ESDetId tmp1_conversion (tmp1);
+          			ESDetId tmp2_conversion (tmp2);
+				float es_clusterwindowsize = 5;
+          			PreshowerCluster preshowerclusterp1 = esClusteringAlgo.makeOnePreshowerCluster( es_clusterwindowsize, &tmp1_conversion);
+          			PreshowerCluster preshowerclusterp2 = esClusteringAlgo.makeOnePreshowerCluster( es_clusterwindowsize, &tmp2_conversion);
+				double e1 = preshowerclusterp1.energy();
+          			double e2 = preshowerclusterp2.energy();
+          			// GeV to #MIPs
+          			e1 = e1 / PreshowerTools::mip_;
+          			e2 = e2 / PreshowerTools::mip_;
+				if(e1 > 2.0 && e2 > 2.0)
+				{
+					deltaE = PreshowerTools::gamma_*(PreshowerTools::calib_planeX_*e1 + PreshowerTools::calib_planeY_*e2);
+				}
+			}
+		}
+
+//
+		double tempEnergy = e3x3 + deltaE;
 	
 		if(isPi0_)
 		{	
-		eeclusters_Pi0_.push_back( CaloCluster( e3x3, clusPos, CaloID(CaloID::DET_ECAL_ENDCAP), enFracs, CaloCluster::undefined, seed_id ) );
+		eeclusters_Pi0_.push_back( CaloCluster( tempEnergy, clusPos, CaloID(CaloID::DET_ECAL_ENDCAP), enFracs, CaloCluster::undefined, seed_id ) );
 		eeSeedTime_Pi0_.push_back( itseed->time() );	
 		eeNxtal_Pi0_.push_back(RecHitsInWindow.size());
 		eeS4S9_Pi0_.push_back(s4s9);		
@@ -460,7 +503,7 @@ void Pi0Tuplizer::recoPhoCluster_EE(bool isPi0_)
 		}
 		else
 		{	
-		eeclusters_Eta_.push_back( CaloCluster( e3x3, clusPos, CaloID(CaloID::DET_ECAL_ENDCAP), enFracs, CaloCluster::undefined, seed_id ) );
+		eeclusters_Eta_.push_back( CaloCluster( tempEnergy, clusPos, CaloID(CaloID::DET_ECAL_ENDCAP), enFracs, CaloCluster::undefined, seed_id ) );
 		eeSeedTime_Eta_.push_back( itseed->time() );	
 		eeNxtal_Eta_.push_back(RecHitsInWindow.size());
 		eeS4S9_Eta_.push_back(s4s9);		
@@ -469,13 +512,13 @@ void Pi0Tuplizer::recoPhoCluster_EE(bool isPi0_)
 		}
 
 		//fill photon cluster
-		pho_E = e3x3;
+		pho_E = tempEnergy;
 		pho_seedE = maxEne;
 		pho_Eta = clusPos.eta();
 		pho_iX = seed_id.ix();
 		pho_Phi = clusPos.phi();
 		pho_iY = seed_id.iy();
-		pho_Pt = ptClus;
+		pho_Pt = tempEnergy/cosh(clusPos.eta());
 		pho_SeedTime = itseed->time();
 		pho_ClusterTime = -999.9;//to be constructed
 		pho_S4S9 = s4s9;
@@ -543,7 +586,7 @@ void Pi0Tuplizer::recoDiPhoEvents_EB(bool isPi0_)
         		math::PtEtaPhiMLorentzVector g2P4_nocor( (g2->energy())/cosh(g2->eta()), g2->eta(), g2->phi(), 0. );
         		math::PtEtaPhiMLorentzVector pi0P4_nocor = g1P4_nocor + g2P4_nocor;
 
-			if( pi0P4_nocor.mass()<0.03 && pi0P4.mass() < 0.03 ) continue;
+			if( pi0P4_nocor.mass()<0.06 && pi0P4.mass() < 0.06 ) continue;
 			//apply kinamatics cut on diphoton and nxtal cut			
 			if(fabs( pi0P4.eta() ) < 1.0 ) 
 			{
@@ -615,7 +658,7 @@ void Pi0Tuplizer::recoDiPhoEvents_EB(bool isPi0_)
 
 			//fill pi0/eta ntuple
 			if(N_Pair_rec >= NPI0MAX-1) break; // too many pi0s
-			if( FillDiPhotonNtuple_ && pi0P4.mass() > ((isPi0_)?0.03:0.25) && pi0P4.mass() < ((isPi0_)?0.25:1.) )
+			if( FillDiPhotonNtuple_ && pi0P4.mass() > ((isPi0_)?0.06:0.25) && pi0P4.mass() < ((isPi0_)?0.25:0.8) )
 			{
 				fromPi0[N_Pair_rec]  =  isPi0_;
 				mPi0_rec[N_Pair_rec]  =  pi0P4.mass();
@@ -743,7 +786,7 @@ void Pi0Tuplizer::recoDiPhoEvents_EE(bool isPi0_)
         		math::PtEtaPhiMLorentzVector g2P4_nocor( (g2->energy())/cosh(g2->eta()), g2->eta(), g2->phi(), 0. );
         		math::PtEtaPhiMLorentzVector pi0P4_nocor = g1P4_nocor + g2P4_nocor;
 
-			if( pi0P4_nocor.mass()<0.03 && pi0P4.mass() < 0.03 ) continue;
+			if( pi0P4_nocor.mass()<0.06 && pi0P4.mass() < 0.06 ) continue;
 			//apply kinamatics cut on diphoton and nxtal cut			
 			if(fabs( pi0P4.eta() ) < 1.5 ) continue;
 			else if(fabs( pi0P4.eta() ) < 1.8 ) 
@@ -818,7 +861,7 @@ void Pi0Tuplizer::recoDiPhoEvents_EE(bool isPi0_)
 
 			//fill pi0/eta ntuple
 			if(N_Pair_rec >= NPI0MAX-1) break; // too many pi0s
-			if( FillDiPhotonNtuple_ && pi0P4.mass() > ((isPi0_)?0.03:0.25) && pi0P4.mass() < ((isPi0_)?0.25:1.) )
+			if( FillDiPhotonNtuple_ && pi0P4.mass() > ((isPi0_)?0.06:0.25) && pi0P4.mass() < ((isPi0_)?0.25:0.8) )
 			{
 				fromPi0[N_Pair_rec]  =  isPi0_;
 				mPi0_rec[N_Pair_rec]  =  pi0P4.mass();
@@ -943,6 +986,7 @@ void Pi0Tuplizer::loadEvent(const edm::Event& iEvent, const edm::EventSetup& iSe
   	iSetup.get<CaloGeometryRecord>().get(geoHandle);
   	geometry = geoHandle.product();
   	estopology_ = new EcalPreshowerTopology(geoHandle);
+	esGeometry_ = (dynamic_cast<const EcalPreshowerGeometry*>( (CaloSubdetectorGeometry*) geometry->getSubdetectorGeometry (DetId::Ecal,EcalPreshower) ));
 }
 
 
@@ -1395,6 +1439,220 @@ float Pi0Tuplizer::DeltaPhi(float phi1, float phi2){
 
 }
 
+PreshowerTools::PreshowerTools(const CaloGeometry* extGeom, CaloSubdetectorTopology* topology_p,  edm::Handle< ESRecHitCollection > & esHandle) : geom_(extGeom)
+{
+	estopology_ = topology_p;
+
+    	for (ESRecHitCollection::const_iterator it = esHandle->begin(); it != esHandle->end(); it++) {
+	rechits_map.insert(std::make_pair(it->id(), *it));
+	}
+}
+
+PreshowerCluster PreshowerTools::makeOnePreshowerCluster(int stripwindow, ESDetId *strip)
+{
+	PreshowerCluster finalcluster;
+	esroad_2d.clear();
+	used_strips.clear();
+	int plane = strip->plane();
+	EcalRecHitCollection clusterRecHits;
+	RecHitsMap recHits_pos;
+	EcalPreshowerNavigator navigator(*strip, estopology_);
+   	navigator.setHome(*strip);
+	findESRoad(stripwindow,*strip,navigator,plane);
+
+   	if ( plane == 1 ) {
+      		ESDetId strip_north = navigator.north();
+      		findESRoad(stripwindow,strip_north,navigator,plane);
+      		navigator.home();
+      		ESDetId strip_south = navigator.south();
+      		findESRoad(stripwindow,strip_south,navigator,plane);
+      		navigator.home();
+   	}
+   	if ( plane == 2 ) {
+      		ESDetId strip_east = navigator.east();
+      		findESRoad(stripwindow,strip_east,navigator,plane);
+      		navigator.home();
+      		ESDetId strip_west = navigator.west();
+      		findESRoad(stripwindow,strip_west,navigator,plane);
+      		navigator.home();
+   	}
+
+	float E_max = 0.;
+   	bool found = false;
+  	RecHitsMap::iterator max_it;	
+	std::vector<ESDetId>::iterator itID;
+   	for (itID = esroad_2d.begin(); itID != esroad_2d.end(); itID++) {
+     		RecHitsMap::iterator strip_it = rechits_map.find(*itID);
+     		if(!goodStrip(strip_it)) continue;
+
+     		DetId nonblindstripid (itID->rawId());
+		float E = strip_it->second.energy();
+     		if ( E > E_max) {
+        		E_max = E;
+        		found = true;
+        		max_it = strip_it;
+     		}
+   	}
+	
+	if ( !found ) {
+		for (itID = esroad_2d.begin(); itID != esroad_2d.end(); itID++) {
+               	DetId blindstripid (itID->rawId());
+		}
+
+           	return finalcluster;
+	}
+	
+	clusterRecHits.push_back(max_it->second);
+   	recHits_pos.insert(std::make_pair(max_it->first, max_it->second));
+   	used_strips.insert(max_it->first);
+	ESDetId next, strip_1, strip_2;
+   	navigator.setHome(max_it->first);
+   	ESDetId startES = max_it->first;
+	if (plane == 1) {
+		int nadjacents_east = 0;
+     		while ( (next=navigator.east()) != ESDetId(0) && next != startES && nadjacents_east < 2 ) {
+       		++nadjacents_east;
+       		RecHitsMap::iterator strip_it = rechits_map.find(next);
+
+                if(!goodStrip(strip_it)) continue;
+		clusterRecHits.push_back(strip_it->second);
+		if ( nadjacents_east==1 ) strip_1 = next;
+        	used_strips.insert(strip_it->first);
+     		}
+			
+		navigator.home();
+     		int nadjacents_west = 0;
+     		while ( (next=navigator.west()) != ESDetId(0) && next != startES && nadjacents_west < 2 ) {
+        	++nadjacents_west;
+        	RecHitsMap::iterator strip_it = rechits_map.find(next);
+        	if(!goodStrip(strip_it)) continue;
+        	clusterRecHits.push_back(strip_it->second);
+        	if ( nadjacents_west==1 ) strip_2 = next;
+        	used_strips.insert(strip_it->first);
+     		}
+	}
+	else if (plane == 2) {
+		int nadjacents_north = 0;
+    	 	while ( (next=navigator.north()) != ESDetId(0) && next != startES && nadjacents_north < 2 ) {
+        		++nadjacents_north;  
+        		RecHitsMap::iterator strip_it = rechits_map.find(next);
+        		if(!goodStrip(strip_it)) continue;      
+        		clusterRecHits.push_back(strip_it->second);
+        		if ( nadjacents_north==1 ) strip_1 = next;
+        		used_strips.insert(strip_it->first);
+     		}
+		navigator.home();
+     		int nadjacents_south = 0;
+     		while ( (next=navigator.south()) != ESDetId(0) && next != startES && nadjacents_south < 2 ) {
+        		++nadjacents_south;   
+        		RecHitsMap::iterator strip_it = rechits_map.find(next);
+        		if(!goodStrip(strip_it)) continue;      
+        		clusterRecHits.push_back(strip_it->second);
+        		if ( nadjacents_south==1 ) strip_2 = next;
+        		used_strips.insert(strip_it->first);
+     		}
+	}
+	else {
+		std::cout << " Wrong plane number" << plane <<", null cluster will be returned! " << std::endl;
+     		return finalcluster;
+	}
+	RecHitsMap::iterator strip_it1, strip_it2;
+   	if ( strip_1 != ESDetId(0)) {
+     		strip_it1 = rechits_map.find(strip_1);
+     		recHits_pos.insert(std::make_pair(strip_it1->first, strip_it1->second));
+   	}
+   	if ( strip_2 != ESDetId(0) ) {
+     		strip_it2 = rechits_map.find(strip_2);
+     		recHits_pos.insert(std::make_pair(strip_it2->first, strip_it2->second));
+   	}
+
+	RecHitsMap::iterator cp;
+	double energy_pos = 0;
+	double x_pos = 0;
+	double y_pos = 0;
+	double z_pos = 0;
+	for (cp = recHits_pos.begin(); cp!=recHits_pos.end(); cp++ ) {
+		double E = cp->second.energy();
+		energy_pos += E;
+		GlobalPoint position = geom_->getPosition(cp->first);
+		x_pos += E * position.x();
+		y_pos += E * position.y();
+		z_pos += E * position.z();
+	}
+
+	if(energy_pos>0.) {
+     		x_pos /= energy_pos;
+     		y_pos /= energy_pos;
+     		z_pos /= energy_pos;
+  	}
+
+	EcalRecHitCollection::iterator it;
+	double Eclust = 0;
+	int stripscounter = 0;
+
+	for (it=clusterRecHits.begin(); it != clusterRecHits.end(); it++) {
+		Eclust += it->energy();
+		stripscounter++;
+	}
+	std::vector< std::pair<DetId, float> > usedHits;
+ 	PreshowerCluster output(Eclust,   math::XYZPoint(x_pos,y_pos, z_pos) , usedHits , plane);
+	return output;
+}
+
+
+void PreshowerTools::findESRoad(int stripwindow, ESDetId strip, EcalPreshowerNavigator theESNav, int plane) {
+
+   	if ( strip == ESDetId(0) ) return;
+
+    	ESDetId next;
+    	theESNav.setHome(strip);
+	esroad_2d.push_back(strip);
+
+    	if (plane == 1) {
+		int n_east= 0;
+      		while ( ((next=theESNav.east()) != ESDetId(0) && next != strip) ) {
+         	esroad_2d.push_back(next);
+         	++n_east;
+         	if (n_east == stripwindow) break;
+      		}
+		int n_west= 0;
+      		theESNav.home();
+      		while ( ((next=theESNav.west()) != ESDetId(0) && next != strip )) {
+         	esroad_2d.push_back(next);
+         	++n_west;
+         	if (n_west == stripwindow) break;
+      		}
+   	}
+   	else if (plane == 2) {
+		int n_north= 0;
+     		while ( ((next=theESNav.north()) != ESDetId(0) && next != strip) ) {
+        	esroad_2d.push_back(next);
+        	++n_north;
+        	if (n_north == stripwindow) break;
+     		}
+
+		int n_south= 0;
+     		theESNav.home();
+     		while ( ((next=theESNav.south()) != ESDetId(0) && next != strip) ) {
+        	esroad_2d.push_back(next);
+        	++n_south;
+        	if (n_south == stripwindow) break;
+     		}
+   	}
+
+   	theESNav.home();
+}
+bool PreshowerTools::goodStrip(RecHitsMap::iterator candidate_it){
+	if ( (used_strips.find(candidate_it->first) != used_strips.end())  ||        //...if it already belongs to a cluster
+        (candidate_it == rechits_map.end() )                    ||        //...if it corresponds to a hit
+        (candidate_it->second.energy() <= 0. ) )   // ...if it has a negative or zero energy
+     	{
+     		return false;
+     	}
+
+	return true;
+
+}
 
 //define this as a plug-in
 DEFINE_FWK_MODULE(Pi0Tuplizer);
