@@ -49,6 +49,10 @@ process.TFileService = cms.Service("TFileService",
     closeFileFast = cms.untracked.bool(True)
 )
 
+#process.Out = cms.OutputModule("PoolOutputModule",
+#         fileName = cms.untracked.string ("MyOutputFile.root")
+#)
+
 #provide input parameters
 process.ntuples = cms.EDAnalyzer('Pi0Tuplizer',
 FillL1SeedFinalDecision = cms.untracked.bool(True),
@@ -138,4 +142,5 @@ else:
 process.p = cms.Path()
 process.p *= process.ecalDigis*process.ecalPreshowerDigis
 process.p *= process.bunchSpacingProducer*process.ecalLocalRecoSequence
+#process.end = cms.EndPath(process.Out)
 process.p *= process.ntuples

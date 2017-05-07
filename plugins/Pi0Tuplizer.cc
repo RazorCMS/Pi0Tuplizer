@@ -333,6 +333,7 @@ void Pi0Tuplizer::recoPhoCluster_EE(bool isPi0_)
 {
 
 	PreshowerTools esClusteringAlgo(geometry, estopology_, esRecHit);
+	
 
 	std::vector<EcalRecHit> eeseends;
 
@@ -479,6 +480,7 @@ void Pi0Tuplizer::recoPhoCluster_EE(bool isPi0_)
           			PreshowerCluster preshowerclusterp2 = esClusteringAlgo.makeOnePreshowerCluster( es_clusterwindowsize, &tmp2_conversion);
 				double e1 = preshowerclusterp1.energy();
           			double e2 = preshowerclusterp2.energy();
+//		cout<<"DEBUG deltaE  e1 = "<<e1<<"   e2 = "<<e2<<endl;
           			// GeV to #MIPs
           			e1 = e1 / PreshowerTools::mip_;
           			e2 = e2 / PreshowerTools::mip_;
@@ -487,6 +489,7 @@ void Pi0Tuplizer::recoPhoCluster_EE(bool isPi0_)
 					deltaE = PreshowerTools::gamma_*(PreshowerTools::calib_planeX_*e1 + PreshowerTools::calib_planeY_*e2);
 				}
 			}
+//		cout<<" e3x3 = "<<e3x3<<"   deltaE = "<<deltaE<<endl;
 		}
 
 //
@@ -1023,6 +1026,10 @@ void Pi0Tuplizer::loadEvent_Pi0(const edm::Event& iEvent, const edm::EventSetup&
 	N_eeRecHit += eeRecHit->size();
 	N_esRecHit += esRecHit->size();
 
+
+	cout<<"DEBUG ebRecHit_Pi0.size  "<<N_ebRecHit_Pi0_<<endl;
+	cout<<"DEBUG eeRecHit_Pi0.size  "<<N_eeRecHit_Pi0_<<endl;
+	cout<<"DEBUG esRecHit_Pi0.size  "<<N_esRecHit_Pi0_<<endl;
 }
 
 
@@ -1058,6 +1065,10 @@ void Pi0Tuplizer::loadEvent_Eta(const edm::Event& iEvent, const edm::EventSetup&
 	N_ebRecHit += ebRecHit->size();
 	N_eeRecHit += eeRecHit->size();
 	N_esRecHit += esRecHit->size();
+
+	cout<<"DEBUG ebRecHit_Eta.size  "<<N_ebRecHit_Eta_<<endl;
+	cout<<"DEBUG eeRecHit_Eta.size  "<<N_eeRecHit_Eta_<<endl;
+	cout<<"DEBUG esRecHit_Eta.size  "<<N_esRecHit_Eta_<<endl;
 
 }
 
@@ -1481,12 +1492,16 @@ PreshowerCluster PreshowerTools::makeOnePreshowerCluster(int stripwindow, ESDetI
    	bool found = false;
   	RecHitsMap::iterator max_it;	
 	std::vector<ESDetId>::iterator itID;
+//	cout<<"DEBUG preshower reco esroad_2d.size "<<esroad_2d.size()<<endl;
+//	cout<<"DEBUG preshower reco rechits_map.size "<<rechits_map.size()<<endl;
    	for (itID = esroad_2d.begin(); itID != esroad_2d.end(); itID++) {
      		RecHitsMap::iterator strip_it = rechits_map.find(*itID);
      		if(!goodStrip(strip_it)) continue;
 
      		DetId nonblindstripid (itID->rawId());
 		float E = strip_it->second.energy();
+		
+//		cout<<"DEBUG preshower reco E pId  "<< E <<endl;
      		if ( E > E_max) {
         		E_max = E;
         		found = true;
@@ -1499,6 +1514,7 @@ PreshowerCluster PreshowerTools::makeOnePreshowerCluster(int stripwindow, ESDetI
                	DetId blindstripid (itID->rawId());
 		}
 
+//		cout<<"DEBUG preshower reco return 00001"<<endl;
            	return finalcluster;
 	}
 	
@@ -1596,6 +1612,8 @@ PreshowerCluster PreshowerTools::makeOnePreshowerCluster(int stripwindow, ESDetI
 	}
 	std::vector< std::pair<DetId, float> > usedHits;
  	PreshowerCluster output(Eclust,   math::XYZPoint(x_pos,y_pos, z_pos) , usedHits , plane);
+	
+//	cout<<"DEBUG makePreshower ... Eclust = "<<Eclust<<endl;
 	return output;
 }
 
