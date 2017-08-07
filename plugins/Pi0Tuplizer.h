@@ -53,6 +53,11 @@
 #include "DataFormats/Common/interface/Handle.h"
 #include "DataFormats/EgammaReco/interface/PreshowerCluster.h"
 
+#include "SimDataFormats/Track/interface/SimTrack.h"
+#include "SimDataFormats/Track/interface/SimTrackContainer.h"
+#include "SimDataFormats/Vertex/interface/SimVertex.h"
+#include "SimDataFormats/Vertex/interface/SimVertexContainer.h"
+
 #include "RecoEcal/EgammaCoreTools/interface/EcalRecHitLess.h"
 #include "RecoEcal/EgammaCoreTools/interface/PositionCalc.h"
 
@@ -117,6 +122,8 @@ private:
 	virtual void resetPhoBranches(); // clear all variables in PhoEvents tree
    	virtual void setBranches(); // set branch of ntuple
 	void GetL1SeedBit();
+	void GetMCTruth();
+	void MCTruthAssoc(bool isPi0, double deltaR);
 	void recoPhoCluster_EB(bool isPi0_);
 	void recoPhoCluster_EE(bool isPi0_);
 
@@ -152,6 +159,7 @@ private:
 	int 	N_esRecHit;
 
 	int 	N_Pi0_rec;
+	int 	N_Pi0_true;
 	int 	N_ebPi0_rec;
 	int 	N_eePi0_rec;
 	int 	N_Pho_rec_Pi0_;
@@ -162,6 +170,7 @@ private:
 	int 	N_esRecHit_Pi0_;
 	
 	int 	N_Eta_rec;
+	int 	N_Eta_true;
 	int 	N_ebEta_rec;
 	int 	N_eeEta_rec;
 	int 	N_Pho_rec_Eta_;
@@ -181,7 +190,9 @@ private:
 	float 	isoG1_rec[NPI0MAX];	
 	float 	isoG2_rec[NPI0MAX];	
 	float 	enG1_rec[NPI0MAX];	
+	float 	enG1_true[NPI0MAX];	
 	float 	enG2_rec[NPI0MAX];	
+	float 	enG2_true[NPI0MAX];	
 	float 	etaG1_rec[NPI0MAX];	
 	float 	etaG2_rec[NPI0MAX];	
 	float 	phiG1_rec[NPI0MAX];	
@@ -233,6 +244,18 @@ private:
  	std::vector< CaloCluster > ebclusters_Eta_;
 	std::vector< CaloCluster > eeclusters_Pi0_;
 	std::vector< CaloCluster > eeclusters_Eta_;
+
+	vector<int> ebclusters_Pi0_MC1_index;
+	vector<int> ebclusters_Eta_MC1_index;
+	vector<int> eeclusters_Pi0_MC1_index;
+	vector<int> eeclusters_Eta_MC1_index;
+	vector<int> ebclusters_Pi0_MC2_index;
+	vector<int> ebclusters_Eta_MC2_index;
+	vector<int> eeclusters_Pi0_MC2_index;
+	vector<int> eeclusters_Eta_MC2_index;
+	
+	bool MatchedToMC_Pi0_;
+	bool MatchedToMC_Eta_;
 	
 	CaloTopology *ebtopology_;
       	CaloTopology *eetopology_;
@@ -262,6 +285,11 @@ private:
 	vector<float>  ebS1S9_Eta_;
 	vector<float>  eeS1S9_Eta_;
 
+	vector<math::XYZPoint> Gamma1MC_Pi0_;
+	vector<math::XYZPoint> Gamma1MC_Eta_;
+	vector<math::XYZPoint> Gamma2MC_Pi0_;
+	vector<math::XYZPoint> Gamma2MC_Eta_;
+	
 	PosCalcParams PCparams_ = {
 				true,//param_LogWeighted_
 				7.4,//param_T0_barl_
@@ -287,12 +315,20 @@ private:
       	edm::Handle<EBRecHitCollection> eeRecHit;
       	edm::Handle<ESRecHitCollection> esRecHit;
 	
+	edm::EDGetTokenT<edm::SimTrackContainer>  g4_simTk_Token_;
+      	edm::EDGetTokenT<edm::SimVertexContainer> g4_simVtx_Token_;
+
+        edm::Handle<SimTrackContainer> simTracks_h;
+	edm::Handle<SimVertexContainer> simVert_h;
+
 	bool foundEB;
 	bool foundEE;
 	bool foundES;
 
 //cuts and options read from cfg file	
  	bool isMC_;
+ 	bool MCAssoc_;
+	double MC_Asssoc_DeltaR;
 	//bool isPi0_;
 	bool FillL1SeedFinalDecision_;
 	bool FillDiPhotonNtuple_;

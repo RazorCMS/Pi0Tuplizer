@@ -1,5 +1,6 @@
 #########################options##############################
 isMC_ = True
+MCAssoc_ = True
 FillL1SeedFinalDecision_ = True
 FillDiPhotonNtuple_ = True
 FillPhotonNtuple_ = True
@@ -26,7 +27,7 @@ process.load("Configuration.StandardSequences.Reconstruction_cff")
 process.load("CommonTools.ParticleFlow.EITopPAG_cff")
 process.load("DQMOffline.Configuration.DQMOfflineMC_cff")
 
-process.GlobalTag.globaltag = '81X_upgrade2017_realistic_v26'
+process.GlobalTag.globaltag = '90X_upgrade2017_realistic_v6_C1'
 
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1000) )
 
@@ -60,20 +61,21 @@ EBRecHitCollectionTag_Eta = cms.untracked.InputTag("ecalRecHit","EcalRecHitsEB",
 EERecHitCollectionTag_Eta = cms.untracked.InputTag("ecalRecHit","EcalRecHitsEE","RECO"),
 ESRecHitCollectionTag_Eta = cms.untracked.InputTag("ecalPreshowerRecHit","EcalRecHitsES","RECO"),
 PhotonOrderOption = cms.untracked.string("SeedEBased"),# "SeedEBased" (g1 is the one with larger seed Energy) or "PhoPtBased"(g1 is the one with larger pt)
-EB_Seed_E_Pi0_ = cms.untracked.double(0.5),
-EE_Seed_E_Pi0_ = cms.untracked.double(0.5),
-pairPtCut_barrel1_Pi0_ = cms.untracked.double(2.6),
-pairPtCut_barrel2_Pi0_ = cms.untracked.double(2.6),
-pairPtCut_endcap1_Pi0_ = cms.untracked.double(3.0),
-pairPtCut_endcap2_Pi0_ = cms.untracked.double(1.5),
-gPtCut_barrel1_Pi0_ = cms.untracked.double(1.3),
-gPtCut_barrel2_Pi0_ = cms.untracked.double(1.3),
-gPtCut_endcap1_Pi0_ = cms.untracked.double(0.95),
-gPtCut_endcap2_Pi0_ = cms.untracked.double(0.65),
-s4s9Cut_barrel1_Pi0_ = cms.untracked.double(0.83),
-s4s9Cut_barrel2_Pi0_ = cms.untracked.double(0.83),
-s4s9Cut_endcap1_Pi0_ = cms.untracked.double(0.95),
-s4s9Cut_endcap2_Pi0_ = cms.untracked.double(0.95),
+MC_Asssoc_DeltaR = cms.untracked.double(0.3),
+EB_Seed_E_Pi0_ = cms.untracked.double(0.2),
+EE_Seed_E_Pi0_ = cms.untracked.double(0.2),
+pairPtCut_barrel1_Pi0_ = cms.untracked.double(1.0),
+pairPtCut_barrel2_Pi0_ = cms.untracked.double(1.0),
+pairPtCut_endcap1_Pi0_ = cms.untracked.double(1.0),
+pairPtCut_endcap2_Pi0_ = cms.untracked.double(1.0),
+gPtCut_barrel1_Pi0_ = cms.untracked.double(0.3),
+gPtCut_barrel2_Pi0_ = cms.untracked.double(0.3),
+gPtCut_endcap1_Pi0_ = cms.untracked.double(0.3),
+gPtCut_endcap2_Pi0_ = cms.untracked.double(0.3),
+s4s9Cut_barrel1_Pi0_ = cms.untracked.double(0.3),
+s4s9Cut_barrel2_Pi0_ = cms.untracked.double(0.3),
+s4s9Cut_endcap1_Pi0_ = cms.untracked.double(0.3),
+s4s9Cut_endcap2_Pi0_ = cms.untracked.double(0.3),
 nxtal1Cut_barrel1_Pi0_ = cms.untracked.double(0.),
 nxtal1Cut_barrel2_Pi0_ = cms.untracked.double(0.),
 nxtal1Cut_endcap1_Pi0_ = cms.untracked.double(0.),
@@ -82,20 +84,20 @@ nxtal2Cut_barrel1_Pi0_ = cms.untracked.double(0.),
 nxtal2Cut_barrel2_Pi0_ = cms.untracked.double(0.),
 nxtal2Cut_endcap1_Pi0_ = cms.untracked.double(0.),
 nxtal2Cut_endcap2_Pi0_ = cms.untracked.double(0.),
-EB_Seed_E_Eta_ = cms.untracked.double(0.5),
-EE_Seed_E_Eta_ = cms.untracked.double(0.5),
-pairPtCut_barrel1_Eta_ = cms.untracked.double(4.0),
-pairPtCut_barrel2_Eta_ = cms.untracked.double(4.0),
-pairPtCut_endcap1_Eta_ = cms.untracked.double(3.0),
-pairPtCut_endcap2_Eta_ = cms.untracked.double(3.0),
-gPtCut_barrel1_Eta_ = cms.untracked.double(1.2),
-gPtCut_barrel2_Eta_ = cms.untracked.double(1.2),
-gPtCut_endcap1_Eta_ = cms.untracked.double(1.0),
-gPtCut_endcap2_Eta_ = cms.untracked.double(0.70),
-s4s9Cut_barrel1_Eta_ = cms.untracked.double(0.87),
-s4s9Cut_barrel2_Eta_ = cms.untracked.double(0.87),
-s4s9Cut_endcap1_Eta_ = cms.untracked.double(0.90),
-s4s9Cut_endcap2_Eta_ = cms.untracked.double(0.90),
+EB_Seed_E_Eta_ = cms.untracked.double(0.2),
+EE_Seed_E_Eta_ = cms.untracked.double(0.2),
+pairPtCut_barrel1_Eta_ = cms.untracked.double(1.0),
+pairPtCut_barrel2_Eta_ = cms.untracked.double(1.0),
+pairPtCut_endcap1_Eta_ = cms.untracked.double(1.0),
+pairPtCut_endcap2_Eta_ = cms.untracked.double(1.0),
+gPtCut_barrel1_Eta_ = cms.untracked.double(0.3),
+gPtCut_barrel2_Eta_ = cms.untracked.double(0.3),
+gPtCut_endcap1_Eta_ = cms.untracked.double(0.3),
+gPtCut_endcap2_Eta_ = cms.untracked.double(0.3),
+s4s9Cut_barrel1_Eta_ = cms.untracked.double(0.3),
+s4s9Cut_barrel2_Eta_ = cms.untracked.double(0.3),
+s4s9Cut_endcap1_Eta_ = cms.untracked.double(0.3),
+s4s9Cut_endcap2_Eta_ = cms.untracked.double(0.3),
 nxtal1Cut_barrel1_Eta_ = cms.untracked.double(0.),
 nxtal1Cut_barrel2_Eta_ = cms.untracked.double(0.),
 nxtal1Cut_endcap1_Eta_ = cms.untracked.double(0.),
@@ -103,7 +105,17 @@ nxtal1Cut_endcap2_Eta_ = cms.untracked.double(0.),
 nxtal2Cut_barrel1_Eta_ = cms.untracked.double(0.),
 nxtal2Cut_barrel2_Eta_ = cms.untracked.double(0.),
 nxtal2Cut_endcap1_Eta_ = cms.untracked.double(0.),
-nxtal2Cut_endcap2_Eta_ = cms.untracked.double(0.)
+nxtal2Cut_endcap2_Eta_ = cms.untracked.double(0.),
+isoGammaBeltdR_Zone_Pi0_        = cms.untracked.double(0.2),
+isoGammaBeltdR_Zone_Eta_        = cms.untracked.double(0.2),
+isoPairBeltdR_Zone_Pi0_         = cms.untracked.double(0.2),
+isoPairBeltdR_Zone_Eta_         = cms.untracked.double(0.3),
+isoGammaBeltdEta_Zone_Pi0_      = cms.untracked.double(0.05),
+isoGammaBeltdEta_Zone_Eta_      = cms.untracked.double(0.1),
+isoPairBeltdEta_Zone_Pi0_       = cms.untracked.double(0.05),
+isoPairBeltdEta_Zone_Eta_       = cms.untracked.double(0.1),
+isoPairCut_                     = cms.untracked.double(999.9),
+isoGammaCut_                    = cms.untracked.double(999.9)
 )
 
 #########################paratmeters for the tuplizer##############################
@@ -111,6 +123,10 @@ if isMC_:
         process.ntuples.isMC = cms.untracked.bool(True)
 else:
         process.ntuples.isMC = cms.untracked.bool(False)
+if MCAssoc_:
+        process.ntuples.MCAssoc = cms.untracked.bool(True)
+else:
+        process.ntuples.MCAssoc = cms.untracked.bool(False)
 if FillL1SeedFinalDecision_:
         process.ntuples.FillL1SeedFinalDecision = cms.untracked.bool(True)
 else:
