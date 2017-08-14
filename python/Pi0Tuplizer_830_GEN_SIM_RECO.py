@@ -1,6 +1,6 @@
 #########################options##############################
 isMC_ = True
-MCAssoc_ = True
+MCAssoc_ = False
 FillL1SeedFinalDecision_ = True
 FillDiPhotonNtuple_ = True
 FillPhotonNtuple_ = True

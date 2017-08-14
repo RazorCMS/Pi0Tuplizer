@@ -1218,6 +1218,7 @@ if(isPi0)
 
 	for(unsigned int i=0;i<Gamma1MC_Pi0_.size();i++)
 	{
+		cout<<"DEBUG  trying to match GEN pi0s with photon energies:  "<<Gamma1MC_Pi0_[i].R()<<"  "<<Gamma2MC_Pi0_[i].R()<<endl;
 		double min_deltaR_G1 = 9999.9;
 		double min_deltaR_G2 = 9999.9;
 		bool G1_found_in_eb = false;
@@ -1288,7 +1289,7 @@ if(isPi0)
 			if(G1_found_in_ee) eeclusters_Pi0_MC1_index[G1_cluster_ind] = i;
 			if(G2_found_in_eb) ebclusters_Pi0_MC2_index[G2_cluster_ind] = i;
 			if(G2_found_in_ee) eeclusters_Pi0_MC2_index[G2_cluster_ind] = i;
-			cout<<"DEBUG  GEN pi0 "<<i<<" matched to reco pi0 (g1, g2) = .... ("<<G1_cluster_ind<<" , "<<G2_cluster_ind<<")"<<endl;
+			cout<<"DEBUG  GEN pi0 "<<i<<" matched to reco pi0 (g1, g2) = .... ("<<G1_cluster_ind<<" , "<<G2_cluster_ind<<"); E1/2 = "<<Gamma1MC_Pi0_[i].R() <<" / "<<Gamma2MC_Pi0_[i].R()<<endl;
 			MatchedToMC_Pi0_ = true;
 		}
 	}
