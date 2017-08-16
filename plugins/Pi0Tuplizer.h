@@ -57,6 +57,10 @@
 #include "SimDataFormats/Track/interface/SimTrackContainer.h"
 #include "SimDataFormats/Vertex/interface/SimVertex.h"
 #include "SimDataFormats/Vertex/interface/SimVertexContainer.h"
+#include "SimDataFormats/GeneratorProducts/interface/HepMCProduct.h"
+#include "DataFormats/Candidate/interface/Candidate.h"
+#include "DataFormats/HepMCCandidate/interface/GenParticle.h"
+
 
 #include "RecoEcal/EgammaCoreTools/interface/EcalRecHitLess.h"
 #include "RecoEcal/EgammaCoreTools/interface/PositionCalc.h"
@@ -85,7 +89,7 @@ typedef std::map<DetId, EcalRecHit> RecHitsMap;
 typedef std::set<DetId> HitsID;
 
 #define NL1SEED 300
-#define NPI0MAX 300
+#define NPI0MAX 100
 
 struct PosCalcParams {
      float  param_LogWeighted_;
@@ -159,7 +163,8 @@ private:
 	int 	N_esRecHit;
 
 	int 	N_Pi0_rec;
-	int 	N_Pi0_true;
+	int 	N_Pi0_gen;
+	int 	N_Pi0_match;
 	int 	N_ebPi0_rec;
 	int 	N_eePi0_rec;
 	int 	N_Pho_rec_Pi0_;
@@ -170,7 +175,8 @@ private:
 	int 	N_esRecHit_Pi0_;
 	
 	int 	N_Eta_rec;
-	int 	N_Eta_true;
+	int 	N_Eta_gen;
+	int 	N_Eta_match;
 	int 	N_ebEta_rec;
 	int 	N_eeEta_rec;
 	int 	N_Pho_rec_Eta_;
@@ -180,6 +186,31 @@ private:
 	int 	N_eeRecHit_Eta_;
 	int 	N_esRecHit_Eta_;
 
+	float 	ptPi0_gen[NPI0MAX];	
+	float 	etaPi0_gen[NPI0MAX];	
+	float 	phiPi0_gen[NPI0MAX];	
+	float 	deltaRG1G2Pi0_gen[NPI0MAX];	
+	float 	enG1_Pi0_gen[NPI0MAX];	
+	float 	ptG1_Pi0_gen[NPI0MAX];	
+	float 	etaG1_Pi0_gen[NPI0MAX];	
+	float 	phiG1_Pi0_gen[NPI0MAX];	
+	float 	enG2_Pi0_gen[NPI0MAX];	
+	float 	ptG2_Pi0_gen[NPI0MAX];	
+	float 	etaG2_Pi0_gen[NPI0MAX];	
+	float 	phiG2_Pi0_gen[NPI0MAX];	
+
+	float 	ptEta_gen[NPI0MAX];	
+	float 	etaEta_gen[NPI0MAX];	
+	float 	phiEta_gen[NPI0MAX];	
+	float 	deltaRG1G2Eta_gen[NPI0MAX];	
+	float 	enG1_Eta_gen[NPI0MAX];	
+	float 	ptG1_Eta_gen[NPI0MAX];	
+	float 	etaG1_Eta_gen[NPI0MAX];	
+	float 	phiG1_Eta_gen[NPI0MAX];	
+	float 	enG2_Eta_gen[NPI0MAX];	
+	float 	ptG2_Eta_gen[NPI0MAX];	
+	float 	etaG2_Eta_gen[NPI0MAX];	
+	float 	phiG2_Eta_gen[NPI0MAX];	
 
 	bool 	fromPi0[NPI0MAX];	
 	float 	mPi0_rec[NPI0MAX];	
@@ -254,8 +285,6 @@ private:
 	vector<int> eeclusters_Pi0_MC2_index;
 	vector<int> eeclusters_Eta_MC2_index;
 	
-	bool MatchedToMC_Pi0_;
-	bool MatchedToMC_Eta_;
 	
 	CaloTopology *ebtopology_;
       	CaloTopology *eetopology_;
@@ -285,10 +314,10 @@ private:
 	vector<float>  ebS1S9_Eta_;
 	vector<float>  eeS1S9_Eta_;
 
-	vector<math::XYZPoint> Gamma1MC_Pi0_;
-	vector<math::XYZPoint> Gamma1MC_Eta_;
-	vector<math::XYZPoint> Gamma2MC_Pi0_;
-	vector<math::XYZPoint> Gamma2MC_Eta_;
+	vector<TLorentzVector> Gamma1MC_Pi0_;
+	vector<TLorentzVector> Gamma1MC_Eta_;
+	vector<TLorentzVector> Gamma2MC_Pi0_;
+	vector<TLorentzVector> Gamma2MC_Eta_;
 	
 	PosCalcParams PCparams_ = {
 				true,//param_LogWeighted_
@@ -311,9 +340,13 @@ private:
       	edm::EDGetTokenT<EERecHitCollection> EERecHitCollectionToken_Eta_;
       	edm::EDGetTokenT<ESRecHitCollection> ESRecHitCollectionToken_Eta_;
 
+	edm::EDGetTokenT<reco::GenParticleCollection> genParticlesToken_;
+
 	edm::Handle<EBRecHitCollection> ebRecHit;
       	edm::Handle<EBRecHitCollection> eeRecHit;
       	edm::Handle<ESRecHitCollection> esRecHit;
+	
+	edm::Handle<reco::GenParticleCollection> genParticles;
 	
 	edm::EDGetTokenT<edm::SimTrackContainer>  g4_simTk_Token_;
       	edm::EDGetTokenT<edm::SimVertexContainer> g4_simVtx_Token_;

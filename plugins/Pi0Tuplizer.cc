@@ -47,6 +47,7 @@ Pi0Tuplizer::Pi0Tuplizer(const edm::ParameterSet& iConfig)
 	{
 		g4_simTk_Token_  = consumes<edm::SimTrackContainer>(edm::InputTag("g4SimHits"));
 	    	g4_simVtx_Token_ = consumes<edm::SimVertexContainer>(edm::InputTag("g4SimHits"));
+		genParticlesToken_      = consumes<reco::GenParticleCollection>(iConfig.getParameter<edm::InputTag>("genParticles"));
 	}
 	
 	edm::InputTag tag_EBRecHit_Pi0_ = iConfig.getUntrackedParameter<edm::InputTag>("EBRecHitCollectionTag_Pi0");	
@@ -91,7 +92,10 @@ Pi0Tuplizer::Pi0Tuplizer(const edm::ParameterSet& iConfig)
 	
 	//create output file and tree	
 	edm::Service<TFileService> fs;
-	if(FillDiPhotonNtuple_) Pi0Events = fs->make<TTree>("Pi0Events", "reconstructed pi0/eta ntuple");	
+	if(FillDiPhotonNtuple_) 
+	{
+		Pi0Events = fs->make<TTree>("Pi0Events", "reconstructed pi0/eta ntuple");	
+	}
 	if(FillPhotonNtuple_) PhoEvents = fs->make<TTree>("PhoEvents", "reconstructed photon ntuple");	
 
 }
@@ -109,7 +113,7 @@ void Pi0Tuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 
 	resetBranches();
 	loadEvent(iEvent, iSetup);
- 
+
 //fill event info
   	runNum = iEvent.id().run();
   	lumiNum = iEvent.luminosityBlock();
@@ -126,8 +130,10 @@ void Pi0Tuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 	if(foundEB) recoPhoCluster_EB(true);//reconstruct photon clusters in EB
 	resetPhoBranches();
 	if(foundEE) recoPhoCluster_EE(true);//reconstruct photon clusters in EE
+	
 
-	MCTruthAssoc(true, MC_Asssoc_DeltaR);
+	if(MCAssoc_) MCTruthAssoc(true, MC_Asssoc_DeltaR);
+	
 
 	if(FillDiPhotonNtuple_) recoDiPhoEvents_EB(true);//reconstruct pi0/eta events from the photon clusters in EB
 	N_ebPair_rec += N_Pair_rec;
@@ -138,13 +144,15 @@ void Pi0Tuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 	N_ebPi0_rec = N_ebPair_rec;
 	N_eePi0_rec = N_eePair_rec;
 		
+
 	loadEvent_Eta(iEvent, iSetup); 
 	resetPhoBranches();
 	if(foundEB) recoPhoCluster_EB(false);//reconstruct photon clusters in EB
 	resetPhoBranches();
 	if(foundEE) recoPhoCluster_EE(false);//reconstruct photon clusters in EE
 
- 	MCTruthAssoc(false, MC_Asssoc_DeltaR);
+ 	if(MCAssoc_) MCTruthAssoc(false, MC_Asssoc_DeltaR);
+	
 
 	if(FillDiPhotonNtuple_) recoDiPhoEvents_EB(false);//reconstruct pi0/eta events from the photon clusters in EB
 	N_ebPair_rec = N_Pair_rec - N_eePair_rec;
@@ -156,9 +164,9 @@ void Pi0Tuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 	N_eeEta_rec = N_eePair_rec - N_eePi0_rec;
 //fill ntuple
 #ifdef DEBUG
-//	cout<<"N_Pho: "<<N_Pho_rec<<"  N_ebRecHit: "<<N_ebRecHit<<"   N_eeRecHit:  "<<N_eeRecHit<<endl;
+	cout<<"N_Pho: "<<N_Pho_rec<<"  N_ebRecHit: "<<N_ebRecHit<<"   N_eeRecHit:  "<<N_eeRecHit<<endl;
 #endif
-	if(FillDiPhotonNtuple_ && N_Pair_rec > 0) Pi0Events->Fill();
+	if(FillDiPhotonNtuple_ && (N_Pair_rec > 0 || (MCAssoc_ && ((N_Pi0_gen+N_Eta_gen) > 0) )) ) Pi0Events->Fill();
 	//Pi0Events->Fill();
 
 }
@@ -573,20 +581,22 @@ void Pi0Tuplizer::recoDiPhoEvents_EB(bool isPi0_)
 
 	int i=0;
 	
-	if(MCAssoc_ && (!MatchedToMC_Pi0_) && (!MatchedToMC_Eta_)) return;	
-	//cout<<"DEBUG recoDiphoEvents 001  _EB"<<endl;
-/*
+	if(MCAssoc_ && (N_Pi0_match==0) && (N_Eta_match==0)) return;	
+	cout<<"DEBUG recoDiphoEvents 001  _EB"<<endl;
+
 	for(unsigned int i=0;i<ebclusters_Pi0_MC1_index.size();i++)
 	{
-		if(ebclusters_Pi0_MC1_index[i]>=0) cout<<"eb pi0 cluster "<<i<<" matched to GEN pho1 of index "<<ebclusters_Pi0_MC1_index[i]<<endl;
-		if(ebclusters_Pi0_MC2_index[i]>=0) cout<<"eb pi0 cluster "<<i<<" matched to GEN pho2 of index "<<ebclusters_Pi0_MC2_index[i]<<endl;
+		if(isPi0_ && ebclusters_Pi0_MC1_index[i]>=0) cout<<"eb pi0 cluster "<<i<<" matched to GEN pho1 of index "<<ebclusters_Pi0_MC1_index[i]<<endl;
+		if(isPi0_ && ebclusters_Pi0_MC2_index[i]>=0) cout<<"eb pi0 cluster "<<i<<" matched to GEN pho2 of index "<<ebclusters_Pi0_MC2_index[i]<<endl;
 	}
-*/
+
 	for(std::vector<CaloCluster>::const_iterator g1  = (isPi0_? ebclusters_Pi0_.begin() : ebclusters_Eta_.begin() ); g1 != (isPi0_? ebclusters_Pi0_.end() : ebclusters_Eta_.end()); ++g1, ++i)
   	{
-		if(MCAssoc_ && (isPi0_? ebclusters_Pi0_MC1_index[i] : ebclusters_Eta_MC1_index[i] <0) && (isPi0_ ? ebclusters_Pi0_MC2_index[i] : ebclusters_Eta_MC2_index[i] <0) ) continue;
-		int MC_index_i = isPi0_? (ebclusters_Pi0_MC1_index[i]>=0 ? ebclusters_Pi0_MC1_index[i]: ebclusters_Pi0_MC2_index[i]): (ebclusters_Eta_MC1_index[i]>=0 ? ebclusters_Eta_MC1_index[i]: ebclusters_Eta_MC2_index[i]);
-		//cout<<"DEBUG recoDiphoEvents 002  "<<MC_index_i<<endl;
+		//cout<<"DEBUG recoDiphoEvents 002-1   -  ebcluster "<<i<<endl;
+		if(MCAssoc_ && ( (isPi0_? ebclusters_Pi0_MC1_index[i] : ebclusters_Eta_MC1_index[i]) <0) && ( (isPi0_ ? ebclusters_Pi0_MC2_index[i] : ebclusters_Eta_MC2_index[i]) <0) ) continue;
+		int MC_index_i = isPi0_? ( (ebclusters_Pi0_MC1_index[i]>=0) ? ebclusters_Pi0_MC1_index[i]: ebclusters_Pi0_MC2_index[i]): ( (ebclusters_Eta_MC1_index[i]>=0) ? ebclusters_Eta_MC1_index[i]: ebclusters_Eta_MC2_index[i]);
+		
+		cout<<"DEBUG recoDiphoEvents 002   -  ebcluster "<<i<<" GammaMC "<<MC_index_i<<endl;
 
 		if(g1->seed().subdetId()!=1) continue;
 
@@ -596,14 +606,14 @@ void Pi0Tuplizer::recoDiPhoEvents_EB(bool isPi0_)
 			if(MCAssoc_ && isPi0_ && !(ebclusters_Pi0_MC1_index[j]==MC_index_i || ebclusters_Pi0_MC2_index[j]==MC_index_i ) ) continue;
 			if(MCAssoc_ && (!isPi0_) && !(ebclusters_Eta_MC1_index[j]==MC_index_i || ebclusters_Eta_MC2_index[j]==MC_index_i )) continue;
 
-			//cout<<"DEBUG recoDiphoEvents 003"<<endl;
+			cout<<"DEBUG recoDiphoEvents 003   -  ebcluster "<<j<<endl;
 
 			if(g2->seed().subdetId()!=1) continue;
 			int ind1 = i;//
         		int ind2 = j;//
         		bool Inverted=false;// if pt(i)>pt(j), Inverted = false; else true
 			bool MCInverted=false;
-			if(isPi0_? ebclusters_Pi0_MC2_index[i] : ebclusters_Eta_MC2_index[i] < 0) MCInverted = true;
+			if((isPi0_? ebclusters_Pi0_MC2_index[i] : ebclusters_Eta_MC2_index[i]) < 0) MCInverted = true;
  
  			//if keep this part, then the leading photon (g1) is the one with higher pt; 
  			//otherwise the leading photon is the one with higher seed energy
@@ -624,8 +634,8 @@ void Pi0Tuplizer::recoDiPhoEvents_EB(bool isPi0_)
         		math::PtEtaPhiMLorentzVector g2P4_nocor( (g2->energy())/cosh(g2->eta()), g2->eta(), g2->phi(), 0. );
         		math::PtEtaPhiMLorentzVector pi0P4_nocor = g1P4_nocor + g2P4_nocor;
 
-			if( pi0P4_nocor.mass()<0.06 && pi0P4.mass() < 0.06 ) continue;
-			//cout<<"DEBUG recoDiphoEvents 004"<<endl;
+			if( pi0P4_nocor.mass()<0.05 && pi0P4.mass() < 0.05 ) continue;
+			cout<<"DEBUG recoDiphoEvents 004"<<endl;
 			//apply kinamatics cut on diphoton and nxtal cut			
 			if(fabs( pi0P4.eta() ) < 1.0 ) 
 			{
@@ -645,7 +655,7 @@ void Pi0Tuplizer::recoDiPhoEvents_EB(bool isPi0_)
 			}
 
 			if( g1P4.eta() == g2P4.eta() && g1P4.phi() == g2P4.phi() ) continue;
-			//cout<<"DEBUG recoDiphoEvents 005"<<endl;
+			cout<<"DEBUG recoDiphoEvents 005"<<endl;
 			
 			//calculate diphoton isolation
 			double isoPi0_temp = 0.0;
@@ -695,7 +705,7 @@ void Pi0Tuplizer::recoDiPhoEvents_EB(bool isPi0_)
 			if(isoPi0_temp > isoPairCut_) continue;
 			if(isoG1_temp > isoGammaCut_) continue;
 			if(isoG2_temp > isoGammaCut_) continue;
-			//cout<<"DEBUG recoDiphoEvents 006"<<endl;
+			cout<<"DEBUG recoDiphoEvents 006"<<endl;
 
 			//fill pi0/eta ntuple
 			if(N_Pair_rec >= NPI0MAX-1) break; // too many pi0s
@@ -756,51 +766,51 @@ void Pi0Tuplizer::recoDiPhoEvents_EB(bool isPi0_)
 				iPhiG1_rec[N_Pair_rec] =  id_1.iphi();
 				iPhiG1_rec[N_Pair_rec] =  id_2.iphi();
 				
-				//cout<<"DEBUG recoDiphoEvents 007"<<endl;
+				cout<<"DEBUG recoDiphoEvents 007"<<endl;
 				if((Inverted && MCInverted ) || ( (!Inverted) && (!MCInverted)))
 				{
 					if(isPi0_ && ebclusters_Pi0_MC1_index[ind1]>=0) 
 					{
-						enG1_true[N_Pair_rec] = Gamma1MC_Pi0_[ebclusters_Pi0_MC1_index[ind1]].R();
-						enG2_true[N_Pair_rec] = Gamma2MC_Pi0_[ebclusters_Pi0_MC1_index[ind1]].R();
+						enG1_true[N_Pair_rec] = Gamma1MC_Pi0_[ebclusters_Pi0_MC1_index[ind1]].E();
+						enG2_true[N_Pair_rec] = Gamma2MC_Pi0_[ebclusters_Pi0_MC1_index[ind1]].E();
 					}
 					if((!isPi0_) && ebclusters_Eta_MC1_index[ind1]>=0) 
 					{
-						enG1_true[N_Pair_rec] = Gamma1MC_Eta_[ebclusters_Eta_MC1_index[ind1]].R();
-						enG2_true[N_Pair_rec] = Gamma2MC_Eta_[ebclusters_Eta_MC1_index[ind1]].R();
+						enG1_true[N_Pair_rec] = Gamma1MC_Eta_[ebclusters_Eta_MC1_index[ind1]].E();
+						enG2_true[N_Pair_rec] = Gamma2MC_Eta_[ebclusters_Eta_MC1_index[ind1]].E();
 					}
 					if(isPi0_ && ebclusters_Pi0_MC2_index[ind1]>=0) 
 					{
-						enG1_true[N_Pair_rec] = Gamma1MC_Pi0_[ebclusters_Pi0_MC2_index[ind1]].R();
-						enG2_true[N_Pair_rec] = Gamma2MC_Pi0_[ebclusters_Pi0_MC2_index[ind1]].R();
+						enG1_true[N_Pair_rec] = Gamma1MC_Pi0_[ebclusters_Pi0_MC2_index[ind1]].E();
+						enG2_true[N_Pair_rec] = Gamma2MC_Pi0_[ebclusters_Pi0_MC2_index[ind1]].E();
 					}
 					if((!isPi0_) && ebclusters_Eta_MC2_index[ind1]>=0) 
 					{
-						enG1_true[N_Pair_rec] = Gamma1MC_Eta_[ebclusters_Eta_MC2_index[ind1]].R();
-						enG2_true[N_Pair_rec] = Gamma2MC_Eta_[ebclusters_Eta_MC2_index[ind1]].R();
+						enG1_true[N_Pair_rec] = Gamma1MC_Eta_[ebclusters_Eta_MC2_index[ind1]].E();
+						enG2_true[N_Pair_rec] = Gamma2MC_Eta_[ebclusters_Eta_MC2_index[ind1]].E();
 					}
 				}
 				else
 				{
 					if(isPi0_ && ebclusters_Pi0_MC1_index[ind1]>=0) 
 					{
-						enG1_true[N_Pair_rec] = Gamma2MC_Pi0_[ebclusters_Pi0_MC1_index[ind1]].R();
-						enG2_true[N_Pair_rec] = Gamma1MC_Pi0_[ebclusters_Pi0_MC1_index[ind1]].R();
+						enG1_true[N_Pair_rec] = Gamma2MC_Pi0_[ebclusters_Pi0_MC1_index[ind1]].E();
+						enG2_true[N_Pair_rec] = Gamma1MC_Pi0_[ebclusters_Pi0_MC1_index[ind1]].E();
 					}
 					if((!isPi0_) && ebclusters_Eta_MC1_index[ind1]>=0) 
 					{
-						enG1_true[N_Pair_rec] = Gamma2MC_Eta_[ebclusters_Eta_MC1_index[ind1]].R();
-						enG2_true[N_Pair_rec] = Gamma1MC_Eta_[ebclusters_Eta_MC1_index[ind1]].R();
+						enG1_true[N_Pair_rec] = Gamma2MC_Eta_[ebclusters_Eta_MC1_index[ind1]].E();
+						enG2_true[N_Pair_rec] = Gamma1MC_Eta_[ebclusters_Eta_MC1_index[ind1]].E();
 					}
 					if(isPi0_ && ebclusters_Pi0_MC2_index[ind1]>=0) 
 					{
-						enG1_true[N_Pair_rec] = Gamma2MC_Pi0_[ebclusters_Pi0_MC2_index[ind1]].R();
-						enG2_true[N_Pair_rec] = Gamma1MC_Pi0_[ebclusters_Pi0_MC2_index[ind1]].R();
+						enG1_true[N_Pair_rec] = Gamma2MC_Pi0_[ebclusters_Pi0_MC2_index[ind1]].E();
+						enG2_true[N_Pair_rec] = Gamma1MC_Pi0_[ebclusters_Pi0_MC2_index[ind1]].E();
 					}
 					if((!isPi0_) && ebclusters_Eta_MC2_index[ind1]>=0) 
 					{
-						enG1_true[N_Pair_rec] = Gamma2MC_Eta_[ebclusters_Eta_MC2_index[ind1]].R();
-						enG2_true[N_Pair_rec] = Gamma1MC_Eta_[ebclusters_Eta_MC2_index[ind1]].R();
+						enG1_true[N_Pair_rec] = Gamma2MC_Eta_[ebclusters_Eta_MC2_index[ind1]].E();
+						enG2_true[N_Pair_rec] = Gamma1MC_Eta_[ebclusters_Eta_MC2_index[ind1]].E();
 					}
 
 				}
@@ -845,9 +855,9 @@ void Pi0Tuplizer::recoDiPhoEvents_EE(bool isPi0_)
 
 	int i=0;
 	
-	if(MCAssoc_ && (!MatchedToMC_Pi0_) && (!MatchedToMC_Eta_)) return;	
+	if(MCAssoc_ && (N_Pi0_match==0) && (N_Eta_match==0)) return;	
 
-	//cout<<"DEBUG recoDiphoEvents 001  _EE"<<endl;
+	cout<<"DEBUG recoDiphoEvents 001  _EE"<<endl;
 /*
 	for(unsigned int i=0;i<eeclusters_Pi0_MC1_index.size();i++)
 	{
@@ -857,9 +867,11 @@ void Pi0Tuplizer::recoDiPhoEvents_EE(bool isPi0_)
 */
 	for(std::vector<CaloCluster>::const_iterator g1  = (isPi0_? eeclusters_Pi0_.begin() : eeclusters_Eta_.begin() ); g1 != (isPi0_? eeclusters_Pi0_.end() : eeclusters_Eta_.end()); ++g1, ++i)
   	{
-		if(MCAssoc_ && (isPi0_? eeclusters_Pi0_MC1_index[i] : eeclusters_Eta_MC1_index[i] <0) && (isPi0_ ? eeclusters_Pi0_MC2_index[i] : eeclusters_Eta_MC2_index[i] <0) ) continue;
+		if(MCAssoc_ && ((isPi0_? eeclusters_Pi0_MC1_index[i] : eeclusters_Eta_MC1_index[i]) <0) && ((isPi0_ ? eeclusters_Pi0_MC2_index[i] : eeclusters_Eta_MC2_index[i]) <0) ) continue;
 		if(g1->seed().subdetId()!=2) continue;
-		int MC_index_i = isPi0_? (eeclusters_Pi0_MC1_index[i]>=0 ? eeclusters_Pi0_MC1_index[i]: eeclusters_Pi0_MC2_index[i]): (eeclusters_Eta_MC1_index[i]>=0 ? eeclusters_Eta_MC1_index[i]: eeclusters_Eta_MC2_index[i]);
+		int MC_index_i = isPi0_? ((eeclusters_Pi0_MC1_index[i]>=0) ? eeclusters_Pi0_MC1_index[i]: eeclusters_Pi0_MC2_index[i]): ((eeclusters_Eta_MC1_index[i]>=0) ? eeclusters_Eta_MC1_index[i]: eeclusters_Eta_MC2_index[i]);
+
+		cout<<"DEBUG recoDiphoEvents 002   -  eecluster "<<i<<" GammaMC "<<MC_index_i<<endl;
 
 		int j=i+1;
 		for(std::vector<CaloCluster>::const_iterator g2 = g1+1; g2 != (isPi0_? eeclusters_Pi0_.end() : eeclusters_Eta_.end()); ++g2, ++j ) 
@@ -867,6 +879,7 @@ void Pi0Tuplizer::recoDiPhoEvents_EE(bool isPi0_)
 
 			if(MCAssoc_ && isPi0_ && !(eeclusters_Pi0_MC1_index[j]==MC_index_i || eeclusters_Pi0_MC2_index[j]==MC_index_i ) ) continue;
                         if(MCAssoc_ && (!isPi0_) && !(eeclusters_Eta_MC1_index[j]==MC_index_i || eeclusters_Eta_MC2_index[j]==MC_index_i )) continue;
+			cout<<"DEBUG recoDiphoEvents 003 "<<endl;
 
 
 			if(g2->seed().subdetId()!=2) continue;
@@ -893,7 +906,8 @@ void Pi0Tuplizer::recoDiPhoEvents_EE(bool isPi0_)
         		math::PtEtaPhiMLorentzVector g2P4_nocor( (g2->energy())/cosh(g2->eta()), g2->eta(), g2->phi(), 0. );
         		math::PtEtaPhiMLorentzVector pi0P4_nocor = g1P4_nocor + g2P4_nocor;
 
-			if( pi0P4_nocor.mass()<0.06 && pi0P4.mass() < 0.06 ) continue;
+			if( pi0P4_nocor.mass()<0.05 && pi0P4.mass() < 0.05 ) continue;
+			cout<<"DEBUG recoDiphoEvents 004"<<endl;
 			//apply kinamatics cut on diphoton and nxtal cut			
 			if(fabs( pi0P4.eta() ) < 1.5 ) continue;
 			else if(fabs( pi0P4.eta() ) < 1.8 ) 
@@ -915,6 +929,7 @@ void Pi0Tuplizer::recoDiPhoEvents_EE(bool isPi0_)
 			}
 
 			if( g1P4.eta() == g2P4.eta() && g1P4.phi() == g2P4.phi() ) continue;
+			cout<<"DEBUG recoDiphoEvents 005"<<endl;
 			
 			//calculate diphoton isolation
 			double isoPi0_temp = 0.0;
@@ -965,10 +980,11 @@ void Pi0Tuplizer::recoDiPhoEvents_EE(bool isPi0_)
 			if(isoG1_temp > isoGammaCut_) continue;
 			if(isoG2_temp > isoGammaCut_) continue;
 
+			cout<<"DEBUG recoDiphoEvents 006"<<endl;
 
 			//fill pi0/eta ntuple
 			if(N_Pair_rec >= NPI0MAX-1) break; // too many pi0s
-			if( FillDiPhotonNtuple_ && pi0P4.mass() > ((isPi0_)?0.06:0.25) && pi0P4.mass() < ((isPi0_)?0.25:0.8) )
+			if( FillDiPhotonNtuple_ && pi0P4.mass() > ((isPi0_)?0.05:0.10) && pi0P4.mass() < ((isPi0_)?0.35:0.9) )
 			{
 				fromPi0[N_Pair_rec]  =  isPi0_;
 				mPi0_rec[N_Pair_rec]  =  pi0P4.mass();
@@ -1028,23 +1044,23 @@ void Pi0Tuplizer::recoDiPhoEvents_EE(bool isPi0_)
 	
 				if(isPi0_ && eeclusters_Pi0_MC1_index[ind1]>=0) 
 				{
-					enG1_true[N_Pair_rec] = Gamma1MC_Pi0_[eeclusters_Pi0_MC1_index[ind1]].R();
-					enG2_true[N_Pair_rec] = Gamma2MC_Pi0_[eeclusters_Pi0_MC1_index[ind1]].R();
+					enG1_true[N_Pair_rec] = Gamma1MC_Pi0_[eeclusters_Pi0_MC1_index[ind1]].E();
+					enG2_true[N_Pair_rec] = Gamma2MC_Pi0_[eeclusters_Pi0_MC1_index[ind1]].E();
 				}
 				if((!isPi0_) && eeclusters_Eta_MC1_index[ind1]>=0) 
 				{
-					enG1_true[N_Pair_rec] = Gamma1MC_Eta_[eeclusters_Eta_MC1_index[ind1]].R();
-					enG2_true[N_Pair_rec] = Gamma2MC_Eta_[eeclusters_Eta_MC1_index[ind1]].R();
+					enG1_true[N_Pair_rec] = Gamma1MC_Eta_[eeclusters_Eta_MC1_index[ind1]].E();
+					enG2_true[N_Pair_rec] = Gamma2MC_Eta_[eeclusters_Eta_MC1_index[ind1]].E();
 				}
 				if(isPi0_ && eeclusters_Pi0_MC2_index[ind1]>=0) 
 				{
-					enG1_true[N_Pair_rec] = Gamma2MC_Pi0_[eeclusters_Pi0_MC2_index[ind1]].R();
-					enG2_true[N_Pair_rec] = Gamma1MC_Pi0_[eeclusters_Pi0_MC2_index[ind1]].R();
+					enG1_true[N_Pair_rec] = Gamma2MC_Pi0_[eeclusters_Pi0_MC2_index[ind1]].E();
+					enG2_true[N_Pair_rec] = Gamma1MC_Pi0_[eeclusters_Pi0_MC2_index[ind1]].E();
 				}
 				if((!isPi0_) && eeclusters_Eta_MC2_index[ind1]>=0) 
 				{
-					enG1_true[N_Pair_rec] = Gamma2MC_Eta_[eeclusters_Eta_MC2_index[ind1]].R();
-					enG2_true[N_Pair_rec] = Gamma1MC_Eta_[eeclusters_Eta_MC2_index[ind1]].R();
+					enG1_true[N_Pair_rec] = Gamma2MC_Eta_[eeclusters_Eta_MC2_index[ind1]].E();
+					enG2_true[N_Pair_rec] = Gamma1MC_Eta_[eeclusters_Eta_MC2_index[ind1]].E();
 				}
 			
 				if(isPi0_)
@@ -1073,6 +1089,7 @@ void Pi0Tuplizer::recoDiPhoEvents_EE(bool isPi0_)
 				nxtalG1_rec[N_Pair_rec] = eeNxtal_Eta_[ind1];	
 				nxtalG2_rec[N_Pair_rec] = eeNxtal_Eta_[ind2];	
 				}
+				cout<<"DEBUG recoDiphoEvents 007"<<endl;
 				N_Pair_rec ++;			
 			}
 			if(N_Pair_rec >= NPI0MAX-1) break; // too many pi0s
@@ -1108,96 +1125,100 @@ void Pi0Tuplizer::GetL1SeedBit()
 
 void Pi0Tuplizer::GetMCTruth()
 {
-	const SimTrackContainer* simTracks;	
-	simTracks = (simTracks_h.isValid()) ? simTracks_h.product() : 0;
-	const SimVertexContainer* simVertices;
-	simVertices = (simVert_h.isValid()) ? simVert_h.product() : 0;
-
-	vector<math::XYZPoint> GammaMC_Pi0_;	
-	vector<math::XYZPoint> GammaMC_Eta_;	
-	vector<int> GammaMC_motherIndex_Pi0_;	
-	vector<int> GammaMC_motherIndex_Eta_;	
-
-	map<unsigned int, const SimTrack*> trackMap;
-    	for (SimTrackContainer::const_iterator iSim = simTracks->begin(); iSim != simTracks->end(); ++iSim) 
-	{
-      		if (!iSim->noVertex()) 
-		{
-        		assert(trackMap.find(iSim->trackId())==trackMap.end());
-        		trackMap[iSim->trackId()] = &(*iSim);
-      		}
-    	}
-	
-	for (SimTrackContainer::const_iterator iSim = simTracks->begin(); iSim != simTracks->end(); ++iSim)
+	for(size_t iG=0; iG<genParticles->size();iG++)
         {
-		if (!iSim->noVertex())
-		{
-			SimVertex const& vtx = (*simVertices)[iSim->vertIndex()];
-			if(iSim->type()==22)
-			{
-				const SimTrack* p = trackMap[vtx.parentIndex()];
-				if(p->type() == 111) 
-				{
-					math::XYZPoint gamma_temp;
-					gamma_temp.SetXYZ(iSim->momentum().x(),iSim->momentum().y(),iSim->momentum().z());
-					GammaMC_Pi0_.push_back(gamma_temp);
-					GammaMC_motherIndex_Pi0_.push_back(iSim->vertIndex());
-				}
-				if(p->type() == 221) 
-				{
-					math::XYZPoint gamma_temp;
-					gamma_temp.SetXYZ(iSim->momentum().x(),iSim->momentum().y(),iSim->momentum().z());
-					GammaMC_Eta_.push_back(gamma_temp);
-					GammaMC_motherIndex_Eta_.push_back(iSim->vertIndex());
-				}
+		unsigned int ndau = (*genParticles)[iG].numberOfDaughters();
+		if(ndau != 2 ) continue;	
+		if(((*genParticles)[iG].pdgId() != 111) && ((*genParticles)[iG].pdgId() != 221)) continue;
 
+		bool isDiphoton = true;	
+		for (unsigned int jD=0; jD < ndau; ++jD) 
+                {
+                	const reco::Candidate *dau = (*genParticles)[iG].daughter(jD);
+			if(dau->pdgId() != 22) isDiphoton=false;
+                }
+
+		if(!isDiphoton) continue;
+
+		//fill GEN pi0
+		if((*genParticles)[iG].pdgId() == 111)
+		{
+			TLorentzVector gamma1_temp, gamma2_temp;
+
+			const reco::Candidate *dau1 = (*genParticles)[iG].daughter(0);
+			const reco::Candidate *dau2 = (*genParticles)[iG].daughter(1);
+			if(dau1->pt() > dau2->pt()) 
+			{
+				gamma1_temp.SetPtEtaPhiE(dau1->pt(), dau1->p4().Eta(), dau1->p4().Phi(), dau1->p4().E());
+				gamma2_temp.SetPtEtaPhiE(dau2->pt(), dau2->p4().Eta(), dau2->p4().Phi(), dau2->p4().E());
 			}
+			else	
+			{
+				gamma2_temp.SetPtEtaPhiE(dau1->pt(), dau1->p4().Eta(), dau1->p4().Phi(), dau1->p4().E());
+				gamma1_temp.SetPtEtaPhiE(dau2->pt(), dau2->p4().Eta(), dau2->p4().Phi(), dau2->p4().E());
+			}
+			Gamma1MC_Pi0_.push_back(gamma1_temp);
+			Gamma2MC_Pi0_.push_back(gamma2_temp);
 		}
-	}	
-
-	for(unsigned int i=0;i<GammaMC_Pi0_.size();i++)
-	{
-		for(unsigned int j=i+1;j<GammaMC_Pi0_.size();j++)
+		//fill GEN eta
+		if((*genParticles)[iG].pdgId() == 221)
 		{
-			if(GammaMC_motherIndex_Pi0_[i] == GammaMC_motherIndex_Pi0_[j])
-			{
-				if(GammaMC_Pi0_[i].R() > GammaMC_Pi0_[j].R())
-				{
-					Gamma1MC_Pi0_.push_back(GammaMC_Pi0_[i]);
-					Gamma2MC_Pi0_.push_back(GammaMC_Pi0_[j]);
-				}
-				else
-				{		
-					Gamma2MC_Pi0_.push_back(GammaMC_Pi0_[i]);
-                                        Gamma1MC_Pi0_.push_back(GammaMC_Pi0_[j]);
-				}	
-			        //cout<<"gen pi0 gamma:  E = "<<GammaMC_Pi0_[i].R()<<"  "<<GammaMC_Pi0_[j].R()<<"  Eta = "<<GammaMC_Pi0_[i].Eta()<<"  "<< GammaMC_Pi0_[j].Eta()<<"  Phi = "<<GammaMC_Pi0_[i].Phi()<<"  "<<GammaMC_Pi0_[j].Phi()<<"  mother index = "<<GammaMC_motherIndex_Pi0_[i]<<endl;
-			}
-		}
-	}	
+			TLorentzVector gamma1_temp, gamma2_temp;
 
-	for(unsigned int i=0;i<GammaMC_Eta_.size();i++)
-	{
-		for(unsigned int j=i+1;j<GammaMC_Eta_.size();j++)
-		{
-			if(GammaMC_motherIndex_Eta_[i] == GammaMC_motherIndex_Eta_[j])
+			const reco::Candidate *dau1 = (*genParticles)[iG].daughter(0);
+			const reco::Candidate *dau2 = (*genParticles)[iG].daughter(1);
+			if(dau1->pt() > dau2->pt()) 
 			{
-				if(GammaMC_Eta_[i].R() > GammaMC_Eta_[j].R())
-				{
-					Gamma1MC_Eta_.push_back(GammaMC_Eta_[i]);
-					Gamma2MC_Eta_.push_back(GammaMC_Eta_[j]);
-				}
-				else
-				{		
-					Gamma2MC_Eta_.push_back(GammaMC_Eta_[i]);
-                                        Gamma1MC_Eta_.push_back(GammaMC_Eta_[j]);
-				}
+				gamma1_temp.SetPtEtaPhiE(dau1->pt(), dau1->p4().Eta(), dau1->p4().Phi(), dau1->p4().E());
+				gamma2_temp.SetPtEtaPhiE(dau2->pt(), dau2->p4().Eta(), dau2->p4().Phi(), dau2->p4().E());
 			}
+			else	
+			{
+				gamma2_temp.SetPtEtaPhiE(dau1->pt(), dau1->p4().Eta(), dau1->p4().Phi(), dau1->p4().E());
+				gamma1_temp.SetPtEtaPhiE(dau2->pt(), dau2->p4().Eta(), dau2->p4().Phi(), dau2->p4().E());
+			}
+			Gamma1MC_Eta_.push_back(gamma1_temp);
+			Gamma2MC_Eta_.push_back(gamma2_temp);
 		}
 	}
+
+	N_Pi0_gen = Gamma2MC_Pi0_.size();
+	N_Eta_gen = Gamma2MC_Eta_.size();
 	
-	//cout<<"DEBUG  = number of true pi0s: "<<Gamma2MC_Pi0_.size()<<endl;	
-	//cout<<"DEBUG  = number of true etas: "<<Gamma2MC_Eta_.size()<<endl;	
+	cout<<"DEBUG  = number of true pi0s: "<<Gamma2MC_Pi0_.size()<<endl;	
+	cout<<"DEBUG  = number of true etas: "<<Gamma2MC_Eta_.size()<<endl;	
+
+	for(int i=0;i<N_Pi0_gen && i<NPI0MAX;i++)
+	{
+		ptPi0_gen[i] = (Gamma1MC_Pi0_[i]+Gamma2MC_Pi0_[i]).Pt();
+		etaPi0_gen[i] = (Gamma1MC_Pi0_[i]+Gamma2MC_Pi0_[i]).Eta();
+		phiPi0_gen[i] = (Gamma1MC_Pi0_[i]+Gamma2MC_Pi0_[i]).Phi();
+		deltaRG1G2Pi0_gen[i] = Gamma1MC_Pi0_[i].DeltaR(Gamma2MC_Pi0_[i]);
+		enG1_Pi0_gen[i] = Gamma1MC_Pi0_[i].E();
+		ptG1_Pi0_gen[i] = Gamma1MC_Pi0_[i].Pt();
+		etaG1_Pi0_gen[i] = Gamma1MC_Pi0_[i].Eta();
+		phiG1_Pi0_gen[i] = Gamma1MC_Pi0_[i].Phi();
+		enG2_Pi0_gen[i] = Gamma2MC_Pi0_[i].E();
+		ptG2_Pi0_gen[i] = Gamma2MC_Pi0_[i].Pt();
+		etaG2_Pi0_gen[i] = Gamma2MC_Pi0_[i].Eta();
+		phiG2_Pi0_gen[i] = Gamma2MC_Pi0_[i].Phi();
+	}
+
+	for(int i=0;i<N_Eta_gen && i<NPI0MAX;i++)
+	{
+		ptEta_gen[i] = (Gamma1MC_Eta_[i]+Gamma2MC_Eta_[i]).Pt();
+		etaEta_gen[i] = (Gamma1MC_Eta_[i]+Gamma2MC_Eta_[i]).Eta();
+		phiEta_gen[i] = (Gamma1MC_Eta_[i]+Gamma2MC_Eta_[i]).Phi();
+		deltaRG1G2Eta_gen[i] = Gamma1MC_Eta_[i].DeltaR(Gamma2MC_Eta_[i]);
+		enG1_Eta_gen[i] = Gamma1MC_Eta_[i].E();
+		ptG1_Eta_gen[i] = Gamma1MC_Eta_[i].Pt();
+		etaG1_Eta_gen[i] = Gamma1MC_Eta_[i].Eta();
+		phiG1_Eta_gen[i] = Gamma1MC_Eta_[i].Phi();
+		enG2_Eta_gen[i] = Gamma2MC_Eta_[i].E();
+		ptG2_Eta_gen[i] = Gamma2MC_Eta_[i].Pt();
+		etaG2_Eta_gen[i] = Gamma2MC_Eta_[i].Eta();
+		phiG2_Eta_gen[i] = Gamma2MC_Eta_[i].Phi();
+	}
 
 }
 
@@ -1218,7 +1239,7 @@ if(isPi0)
 
 	for(unsigned int i=0;i<Gamma1MC_Pi0_.size();i++)
 	{
-		cout<<"DEBUG  trying to match GEN pi0s with photon energies:  "<<Gamma1MC_Pi0_[i].R()<<"  "<<Gamma2MC_Pi0_[i].R()<<endl;
+		//cout<<"DEBUG  trying to match GEN pi0s with photon energies:  "<<Gamma1MC_Pi0_[i].E()<<"  "<<Gamma2MC_Pi0_[i].E()<<endl;
 		double min_deltaR_G1 = 9999.9;
 		double min_deltaR_G2 = 9999.9;
 		bool G1_found_in_eb = false;
@@ -1227,16 +1248,20 @@ if(isPi0)
 		bool G2_found_in_ee = false;
 		unsigned int G1_cluster_ind = -1;
 		unsigned int G2_cluster_ind = -1;
+		double G1_cluster_eta = -9999.99;
+		double G2_cluster_eta = -9999.99;
 
 		//match G1
 		//cout<<"DEBUG   pi0, trying to match G1...."<<endl;
 		for(unsigned int j=0;j<ebclusters_Pi0_.size();j++)
 		{
-			double deltaR_this = GetDeltaR(Gamma1MC_Pi0_[i].Eta(), Gamma1MC_Pi0_[i].Phi(), ebclusters_Pi0_[j].eta(), ebclusters_Pi0_[j].phi());
+			if(ebclusters_Pi0_MC1_index[j]>=0 || ebclusters_Pi0_MC2_index[j]>=0) continue;
+			double deltaR_this = GetDeltaR(Gamma1MC_Pi0_[i].Eta(), ebclusters_Pi0_[j].eta(), Gamma1MC_Pi0_[i].Phi(), ebclusters_Pi0_[j].phi());
 			if(deltaR_this < min_deltaR_G1 && deltaR_this < deltaR) 
 			{
 				G1_found_in_eb	= true;
 				G1_cluster_ind = j;
+				G1_cluster_eta = ebclusters_Pi0_[j].eta();
 				min_deltaR_G1 = deltaR_this;
 			}
 		}	
@@ -1244,11 +1269,13 @@ if(isPi0)
 		{
 			for(unsigned int j=0;j<eeclusters_Pi0_.size();j++)
                 	{
-                        	double deltaR_this = GetDeltaR(Gamma1MC_Pi0_[i].Eta(), Gamma1MC_Pi0_[i].Phi(), eeclusters_Pi0_[j].eta(), eeclusters_Pi0_[j].phi());
+				if(eeclusters_Pi0_MC1_index[j]>=0 || eeclusters_Pi0_MC2_index[j]>=0) continue;
+                        	double deltaR_this = GetDeltaR(Gamma1MC_Pi0_[i].Eta(), eeclusters_Pi0_[j].eta(), Gamma1MC_Pi0_[i].Phi(), eeclusters_Pi0_[j].phi());
                         	if(deltaR_this < min_deltaR_G1 && deltaR_this < deltaR)
                         	{       
                                 	G1_found_in_ee  = true;
                                 	G1_cluster_ind = j;
+					G1_cluster_eta = eeclusters_Pi0_[j].eta();
 					min_deltaR_G1 = deltaR_this;
                         	}
                 	} 
@@ -1260,11 +1287,13 @@ if(isPi0)
 			//cout<<"DEBUG   pi0, G1 matched, now trying to match G2..."<<endl;
 			for(unsigned int j=0;j<ebclusters_Pi0_.size() && j!=G1_cluster_ind ;j++)
                         {
-                                double deltaR_this = GetDeltaR(Gamma2MC_Pi0_[i].Eta(), Gamma2MC_Pi0_[i].Phi(), ebclusters_Pi0_[j].eta(), ebclusters_Pi0_[j].phi());
+				if(ebclusters_Pi0_MC1_index[j]>=0 || ebclusters_Pi0_MC2_index[j]>=0) continue;
+                                double deltaR_this = GetDeltaR(Gamma2MC_Pi0_[i].Eta(), ebclusters_Pi0_[j].eta(), Gamma2MC_Pi0_[i].Phi(), ebclusters_Pi0_[j].phi());
                                 if(deltaR_this < min_deltaR_G2 && deltaR_this < deltaR)
                                 {
                                         G2_found_in_eb  = true;
                                         G2_cluster_ind = j;
+					G2_cluster_eta = ebclusters_Pi0_[j].eta();
 					min_deltaR_G2 = deltaR_this;
                                 }
                         }
@@ -1272,11 +1301,13 @@ if(isPi0)
 			{
 				for(unsigned int j=0;j<eeclusters_Pi0_.size() && j!=G1_cluster_ind;j++)
                         	{
-                                	double deltaR_this = GetDeltaR(Gamma2MC_Pi0_[i].Eta(), Gamma2MC_Pi0_[i].Phi(), eeclusters_Pi0_[j].eta(), eeclusters_Pi0_[j].phi());
+					if(eeclusters_Pi0_MC1_index[j]>=0 || eeclusters_Pi0_MC2_index[j]>=0) continue;
+                                	double deltaR_this = GetDeltaR(Gamma2MC_Pi0_[i].Eta(), eeclusters_Pi0_[j].eta(), Gamma2MC_Pi0_[i].Phi(), eeclusters_Pi0_[j].phi());
                                 	if(deltaR_this < min_deltaR_G2 && deltaR_this < deltaR)
                                 	{
                                         	G2_found_in_ee  = true;
                                         	G2_cluster_ind = j;
+						G2_cluster_eta = eeclusters_Pi0_[j].eta();
                                         	min_deltaR_G2 = deltaR_this;
                                 	}
                         	}
@@ -1289,8 +1320,8 @@ if(isPi0)
 			if(G1_found_in_ee) eeclusters_Pi0_MC1_index[G1_cluster_ind] = i;
 			if(G2_found_in_eb) ebclusters_Pi0_MC2_index[G2_cluster_ind] = i;
 			if(G2_found_in_ee) eeclusters_Pi0_MC2_index[G2_cluster_ind] = i;
-			cout<<"DEBUG  GEN pi0 "<<i<<" matched to reco pi0 (g1, g2) = .... ("<<G1_cluster_ind<<" , "<<G2_cluster_ind<<"); E1/2 = "<<Gamma1MC_Pi0_[i].R() <<" / "<<Gamma2MC_Pi0_[i].R()<<endl;
-			MatchedToMC_Pi0_ = true;
+			cout<<"DEBUG  GEN pi0 "<<i<<" matched to reco pi0 (g1, g2) = .... ("<<G1_cluster_ind<<(G1_found_in_eb ? " EB " : " EE ")<<", "<<G2_cluster_ind<<(G2_found_in_eb ? " EB " : " EE ")<<"); \n E1/2 = "<<Gamma1MC_Pi0_[i].E() <<" / "<<Gamma2MC_Pi0_[i].E()<<"  Eta1/2(gen) = "<<Gamma1MC_Pi0_[i].Eta() <<" / "<<Gamma2MC_Pi0_[i].Eta() <<" Eta1/2(reco) = "<<G1_cluster_eta<<" / "<<G2_cluster_eta<< " deltaR1/2 = "<<min_deltaR_G1<<" / "<<min_deltaR_G2<<endl;
+			N_Pi0_match ++;
 		}
 	}
 }
@@ -1322,7 +1353,8 @@ else
 		//match G1
 		for(unsigned int j=0;j<ebclusters_Eta_.size();j++)
 		{
-			double deltaR_this = GetDeltaR(Gamma1MC_Eta_[i].Eta(), Gamma1MC_Eta_[i].Phi(), ebclusters_Eta_[j].eta(), ebclusters_Eta_[j].phi());
+			if(ebclusters_Eta_MC1_index[j]>=0 || ebclusters_Eta_MC2_index[j]>=0) continue;
+			double deltaR_this = GetDeltaR(Gamma1MC_Eta_[i].Eta(), ebclusters_Eta_[j].eta(), Gamma1MC_Eta_[i].Phi(), ebclusters_Eta_[j].phi());
 			if(deltaR_this < min_deltaR_G1 && deltaR_this < deltaR) 
 			{
 				G1_found_in_eb	= true;
@@ -1334,7 +1366,8 @@ else
 		{
 			for(unsigned int j=0;j<eeclusters_Eta_.size();j++)
                 	{
-                        	double deltaR_this = GetDeltaR(Gamma1MC_Eta_[i].Eta(), Gamma1MC_Eta_[i].Phi(), eeclusters_Eta_[j].eta(), eeclusters_Eta_[j].phi());
+				if(eeclusters_Eta_MC1_index[j]>=0 || eeclusters_Eta_MC2_index[j]>=0) continue;
+                        	double deltaR_this = GetDeltaR(Gamma1MC_Eta_[i].Eta(), eeclusters_Eta_[j].eta(), Gamma1MC_Eta_[i].Phi(), eeclusters_Eta_[j].phi());
                         	if(deltaR_this < min_deltaR_G1 && deltaR_this < deltaR)
                         	{       
                                 	G1_found_in_ee  = true;
@@ -1349,7 +1382,8 @@ else
 		{
 			for(unsigned int j=0;j<ebclusters_Eta_.size() && j!=G1_cluster_ind ;j++)
                         {
-                                double deltaR_this = GetDeltaR(Gamma2MC_Eta_[i].Eta(), Gamma2MC_Eta_[i].Phi(), ebclusters_Eta_[j].eta(), ebclusters_Eta_[j].phi());
+				if(ebclusters_Eta_MC1_index[j]>=0 || ebclusters_Eta_MC2_index[j]>=0) continue;
+                                double deltaR_this = GetDeltaR(Gamma2MC_Eta_[i].Eta(), ebclusters_Eta_[j].eta(), Gamma2MC_Eta_[i].Phi(), ebclusters_Eta_[j].phi());
                                 if(deltaR_this < min_deltaR_G2 && deltaR_this < deltaR)
                                 {
                                         G2_found_in_eb  = true;
@@ -1361,7 +1395,8 @@ else
 			{
 				for(unsigned int j=0;j<eeclusters_Eta_.size() && j!=G1_cluster_ind;j++)
                         	{
-                                	double deltaR_this = GetDeltaR(Gamma2MC_Eta_[i].Eta(), Gamma2MC_Eta_[i].Phi(), eeclusters_Eta_[j].eta(), eeclusters_Eta_[j].phi());
+					if(eeclusters_Eta_MC1_index[j]>=0 || eeclusters_Eta_MC2_index[j]>=0) continue;
+                                	double deltaR_this = GetDeltaR(Gamma2MC_Eta_[i].Eta(), eeclusters_Eta_[j].eta(), Gamma2MC_Eta_[i].Phi(), eeclusters_Eta_[j].phi());
                                 	if(deltaR_this < min_deltaR_G2 && deltaR_this < deltaR)
                                 	{
                                         	G2_found_in_ee  = true;
@@ -1379,7 +1414,7 @@ else
 			if(G2_found_in_eb) ebclusters_Eta_MC2_index[G2_cluster_ind] = i;
 			if(G2_found_in_ee) eeclusters_Eta_MC2_index[G2_cluster_ind] = i;
 			//cout<<"DEBUG   GEN eta matched to reco eta...."<<endl;
-			MatchedToMC_Eta_ = true;
+			N_Eta_match ++;
 		}
 	}
 
@@ -1400,6 +1435,7 @@ void Pi0Tuplizer::loadEvent(const edm::Event& iEvent, const edm::EventSetup& iSe
 	{
 		iEvent.getByToken(g4_simTk_Token_, simTracks_h);
 		iEvent.getByToken(g4_simVtx_Token_, simVert_h);
+		iEvent.getByToken(genParticlesToken_,genParticles);
 	}
 
 }
@@ -1634,7 +1670,11 @@ void Pi0Tuplizer::setBranches()
 
 	Pi0Events->Branch( "N_Pair_rec", &N_Pair_rec, "N_Pair_rec/I");
 	Pi0Events->Branch( "N_Pi0_rec", &N_Pi0_rec, "N_Pi0_rec/I");
+	Pi0Events->Branch( "N_Pi0_gen", &N_Pi0_gen, "N_Pi0_gen/I");
+	Pi0Events->Branch( "N_Pi0_match", &N_Pi0_match, "N_Pi0_match/I");
 	Pi0Events->Branch( "N_Eta_rec", &N_Eta_rec, "N_Eta_rec/I");
+	Pi0Events->Branch( "N_Eta_gen", &N_Eta_gen, "N_Eta_gen/I");
+	Pi0Events->Branch( "N_Eta_match", &N_Eta_match, "N_Eta_match/I");
 	
 	Pi0Events->Branch( "N_ebPair_rec", &N_ebPair_rec, "N_ebPair_rec/I");
 	Pi0Events->Branch( "N_ebPi0_rec", &N_ebPi0_rec, "N_ebPi0_rec/I");
@@ -1643,6 +1683,32 @@ void Pi0Tuplizer::setBranches()
 	Pi0Events->Branch( "N_eePair_rec", &N_eePair_rec, "N_eePair_rec/I");
 	Pi0Events->Branch( "N_eePi0_rec", &N_eePi0_rec, "N_eePi0_rec/I");
 	Pi0Events->Branch( "N_eeEta_rec", &N_eeEta_rec, "N_eeEta_rec/I");
+
+	Pi0Events->Branch( "ptPi0_gen", ptPi0_gen, "ptPi0_gen[N_Pi0_gen]/F");		
+	Pi0Events->Branch( "etaPi0_gen", etaPi0_gen, "etaPi0_gen[N_Pi0_gen]/F");		
+	Pi0Events->Branch( "phiPi0_gen", phiPi0_gen, "phiPi0_gen[N_Pi0_gen]/F");		
+	Pi0Events->Branch( "deltaRG1G2Pi0_gen", deltaRG1G2Pi0_gen, "deltaRG1G2Pi0_gen[N_Pi0_gen]/F");		
+	Pi0Events->Branch( "enG1_Pi0_gen", enG1_Pi0_gen, "enG1_Pi0_gen[N_Pi0_gen]/F");		
+	Pi0Events->Branch( "ptG1_Pi0_gen", ptG1_Pi0_gen, "ptG1_Pi0_gen[N_Pi0_gen]/F");		
+	Pi0Events->Branch( "etaG1_Pi0_gen", etaG1_Pi0_gen, "etaG1_Pi0_gen[N_Pi0_gen]/F");		
+	Pi0Events->Branch( "phiG1_Pi0_gen", phiG1_Pi0_gen, "phiG1_Pi0_gen[N_Pi0_gen]/F");		
+	Pi0Events->Branch( "enG2_Pi0_gen", enG2_Pi0_gen, "enG2_Pi0_gen[N_Pi0_gen]/F");		
+	Pi0Events->Branch( "ptG2_Pi0_gen", ptG2_Pi0_gen, "ptG2_Pi0_gen[N_Pi0_gen]/F");		
+	Pi0Events->Branch( "etaG2_Pi0_gen", etaG2_Pi0_gen, "etaG2_Pi0_gen[N_Pi0_gen]/F");		
+	Pi0Events->Branch( "phiG2_Pi0_gen", phiG2_Pi0_gen, "phiG2_Pi0_gen[N_Pi0_gen]/F");		
+
+	Pi0Events->Branch( "ptEta_gen", ptEta_gen, "ptEta_gen[N_Eta_gen]/F");		
+	Pi0Events->Branch( "etaEta_gen", etaEta_gen, "etaEta_gen[N_Eta_gen]/F");		
+	Pi0Events->Branch( "phiEta_gen", phiEta_gen, "phiEta_gen[N_Eta_gen]/F");		
+	Pi0Events->Branch( "deltaRG1G2Eta_gen", deltaRG1G2Eta_gen, "deltaRG1G2Eta_gen[N_Eta_gen]/F");		
+	Pi0Events->Branch( "enG1_Eta_gen", enG1_Eta_gen, "enG1_Eta_gen[N_Eta_gen]/F");		
+	Pi0Events->Branch( "ptG1_Eta_gen", ptG1_Eta_gen, "ptG1_Eta_gen[N_Eta_gen]/F");		
+	Pi0Events->Branch( "etaG1_Eta_gen", etaG1_Eta_gen, "etaG1_Eta_gen[N_Eta_gen]/F");		
+	Pi0Events->Branch( "phiG1_Eta_gen", phiG1_Eta_gen, "phiG1_Eta_gen[N_Eta_gen]/F");		
+	Pi0Events->Branch( "enG2_Eta_gen", enG2_Eta_gen, "enG2_Eta_gen[N_Eta_gen]/F");		
+	Pi0Events->Branch( "ptG2_Eta_gen", ptG2_Eta_gen, "ptG2_Eta_gen[N_Eta_gen]/F");		
+	Pi0Events->Branch( "etaG2_Eta_gen", etaG2_Eta_gen, "etaG2_Eta_gen[N_Eta_gen]/F");		
+	Pi0Events->Branch( "phiG2_Eta_gen", phiG2_Eta_gen, "phiG2_Eta_gen[N_Eta_gen]/F");		
 
 	Pi0Events->Branch( "fromPi0", fromPi0, "fromPi0[N_Pair_rec]/O");		
 	Pi0Events->Branch( "mPi0_rec", mPi0_rec, "mPi0_rec[N_Pair_rec]/F");		
@@ -1719,15 +1785,17 @@ void Pi0Tuplizer::resetBranches()
 	allL1SeedFinalDecision[i] = false;
 	}	
 	L1SeedBitFinalDecision->clear();
-	MatchedToMC_Pi0_ =  false;
-	MatchedToMC_Eta_ = false;
 	N_Pair_rec = 0;
 	N_ebPair_rec = 0;
 	N_eePair_rec = 0;
 	N_Pi0_rec = 0;
+	N_Pi0_gen = 0;
+	N_Pi0_match = 0;
 	N_ebPi0_rec = 0;
 	N_eePi0_rec = 0;
 	N_Eta_rec = 0;
+	N_Eta_gen = 0;
+	N_Eta_match = 0;
 	N_ebEta_rec = 0;
 	N_eeEta_rec = 0;
 	N_Pho_rec = 0;
@@ -1752,6 +1820,33 @@ void Pi0Tuplizer::resetBranches()
 
 	for(int i=0;i<NPI0MAX;i++)
 	{
+		ptPi0_gen[i] = 0;
+		etaPi0_gen[i] = 0;
+		phiPi0_gen[i] = 0;
+		deltaRG1G2Pi0_gen[i] = 0;
+		enG1_Pi0_gen[i] = 0;
+		ptG1_Pi0_gen[i] = 0;
+		etaG1_Pi0_gen[i] = 0;
+		phiG1_Pi0_gen[i] = 0;
+		enG2_Pi0_gen[i] = 0;
+		ptG2_Pi0_gen[i] = 0;
+		etaG2_Pi0_gen[i] = 0;
+		phiG2_Pi0_gen[i] = 0;
+		
+		ptEta_gen[i] = 0;
+		etaEta_gen[i] = 0;
+		phiEta_gen[i] = 0;
+		deltaRG1G2Eta_gen[i] = 0;
+		enG1_Eta_gen[i] = 0;
+		ptG1_Eta_gen[i] = 0;
+		etaG1_Eta_gen[i] = 0;
+		phiG1_Eta_gen[i] = 0;
+		enG2_Eta_gen[i] = 0;
+		ptG2_Eta_gen[i] = 0;
+		etaG2_Eta_gen[i] = 0;
+		phiG2_Eta_gen[i] = 0;
+
+
 		fromPi0[i] = false;
 		mPi0_rec[i] = 0;
 		ptPi0_rec[i] = 0;
