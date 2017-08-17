@@ -186,6 +186,9 @@ private:
 	int 	N_eeRecHit_Eta_;
 	int 	N_esRecHit_Eta_;
 
+	int 	nIsoGamma0p3Pi0_gen[NPI0MAX];	
+	int 	nIsoGamma0p2Pi0_gen[NPI0MAX];	
+	int 	nIsoGamma0p1Pi0_gen[NPI0MAX];	
 	float 	ptPi0_gen[NPI0MAX];	
 	float 	etaPi0_gen[NPI0MAX];	
 	float 	phiPi0_gen[NPI0MAX];	
@@ -199,6 +202,9 @@ private:
 	float 	etaG2_Pi0_gen[NPI0MAX];	
 	float 	phiG2_Pi0_gen[NPI0MAX];	
 
+	int 	nIsoGamma0p3Eta_gen[NPI0MAX];	
+	int 	nIsoGamma0p2Eta_gen[NPI0MAX];	
+	int 	nIsoGamma0p1Eta_gen[NPI0MAX];	
 	float 	ptEta_gen[NPI0MAX];	
 	float 	etaEta_gen[NPI0MAX];	
 	float 	phiEta_gen[NPI0MAX];	

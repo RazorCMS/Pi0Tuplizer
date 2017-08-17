@@ -1202,6 +1202,48 @@ void Pi0Tuplizer::GetMCTruth()
 		ptG2_Pi0_gen[i] = Gamma2MC_Pi0_[i].Pt();
 		etaG2_Pi0_gen[i] = Gamma2MC_Pi0_[i].Eta();
 		phiG2_Pi0_gen[i] = Gamma2MC_Pi0_[i].Phi();
+		//calculate how many gammas from other pi0 are in this pi0 cone
+		for(int j=0;j<N_Pi0_gen;j++)
+		{
+			if(j==i) continue;
+			double dR1_this = Gamma1MC_Pi0_[j].DeltaR(Gamma1MC_Pi0_[i]+Gamma2MC_Pi0_[i]);
+			double dR2_this = Gamma2MC_Pi0_[j].DeltaR(Gamma1MC_Pi0_[i]+Gamma2MC_Pi0_[i]);
+			if(dR1_this > 0.3 && dR2_this > 0.3) continue;
+
+			if(dR1_this < 0.1)
+			{
+				nIsoGamma0p3Pi0_gen[i] += 1;
+				nIsoGamma0p2Pi0_gen[i] += 1;
+				nIsoGamma0p1Pi0_gen[i] += 1;
+			}
+			else if(dR1_this < 0.2)
+			{
+				
+				nIsoGamma0p3Pi0_gen[i] += 1;
+				nIsoGamma0p2Pi0_gen[i] += 1;
+			}
+			else if(dR1_this < 0.3)
+			{
+				nIsoGamma0p3Pi0_gen[i] += 1;
+			}
+
+			if(dR2_this < 0.1)
+			{
+				nIsoGamma0p3Pi0_gen[i] += 1;
+				nIsoGamma0p2Pi0_gen[i] += 1;
+				nIsoGamma0p1Pi0_gen[i] += 1;
+			}
+			else if(dR2_this < 0.2)
+			{
+				
+				nIsoGamma0p3Pi0_gen[i] += 1;
+				nIsoGamma0p2Pi0_gen[i] += 1;
+			}
+			else if(dR2_this < 0.3)
+			{
+				nIsoGamma0p3Pi0_gen[i] += 1;
+			}
+		}
 	}
 
 	for(int i=0;i<N_Eta_gen && i<NPI0MAX;i++)
@@ -1218,6 +1260,49 @@ void Pi0Tuplizer::GetMCTruth()
 		ptG2_Eta_gen[i] = Gamma2MC_Eta_[i].Pt();
 		etaG2_Eta_gen[i] = Gamma2MC_Eta_[i].Eta();
 		phiG2_Eta_gen[i] = Gamma2MC_Eta_[i].Phi();
+
+		for(int j=0;j<N_Eta_gen;j++)
+		{
+			if(j==i) continue;
+			double dR1_this = Gamma1MC_Eta_[j].DeltaR(Gamma1MC_Eta_[i]+Gamma2MC_Eta_[i]);
+			double dR2_this = Gamma2MC_Eta_[j].DeltaR(Gamma1MC_Eta_[i]+Gamma2MC_Eta_[i]);
+			if(dR1_this > 0.3 && dR2_this > 0.3) continue;
+
+			if(dR1_this < 0.1)
+			{
+				nIsoGamma0p3Eta_gen[i] += 1;
+				nIsoGamma0p2Eta_gen[i] += 1;
+				nIsoGamma0p1Eta_gen[i] += 1;
+			}
+			else if(dR1_this < 0.2)
+			{
+				
+				nIsoGamma0p3Eta_gen[i] += 1;
+				nIsoGamma0p2Eta_gen[i] += 1;
+			}
+			else if(dR1_this < 0.3)
+			{
+				nIsoGamma0p3Eta_gen[i] += 1;
+			}
+
+			if(dR2_this < 0.1)
+			{
+				nIsoGamma0p3Eta_gen[i] += 1;
+				nIsoGamma0p2Eta_gen[i] += 1;
+				nIsoGamma0p1Eta_gen[i] += 1;
+			}
+			else if(dR2_this < 0.2)
+			{
+				
+				nIsoGamma0p3Eta_gen[i] += 1;
+				nIsoGamma0p2Eta_gen[i] += 1;
+			}
+			else if(dR2_this < 0.3)
+			{
+				nIsoGamma0p3Eta_gen[i] += 1;
+			}
+		}
+
 	}
 
 }
@@ -1684,6 +1769,9 @@ void Pi0Tuplizer::setBranches()
 	Pi0Events->Branch( "N_eePi0_rec", &N_eePi0_rec, "N_eePi0_rec/I");
 	Pi0Events->Branch( "N_eeEta_rec", &N_eeEta_rec, "N_eeEta_rec/I");
 
+	Pi0Events->Branch( "nIsoGamma0p3Pi0_gen", nIsoGamma0p3Pi0_gen, "nIsoGamma0p3Pi0_gen[N_Pi0_gen]/I");		
+	Pi0Events->Branch( "nIsoGamma0p2Pi0_gen", nIsoGamma0p2Pi0_gen, "nIsoGamma0p2Pi0_gen[N_Pi0_gen]/I");		
+	Pi0Events->Branch( "nIsoGamma0p1Pi0_gen", nIsoGamma0p1Pi0_gen, "nIsoGamma0p1Pi0_gen[N_Pi0_gen]/I");		
 	Pi0Events->Branch( "ptPi0_gen", ptPi0_gen, "ptPi0_gen[N_Pi0_gen]/F");		
 	Pi0Events->Branch( "etaPi0_gen", etaPi0_gen, "etaPi0_gen[N_Pi0_gen]/F");		
 	Pi0Events->Branch( "phiPi0_gen", phiPi0_gen, "phiPi0_gen[N_Pi0_gen]/F");		
@@ -1697,6 +1785,9 @@ void Pi0Tuplizer::setBranches()
 	Pi0Events->Branch( "etaG2_Pi0_gen", etaG2_Pi0_gen, "etaG2_Pi0_gen[N_Pi0_gen]/F");		
 	Pi0Events->Branch( "phiG2_Pi0_gen", phiG2_Pi0_gen, "phiG2_Pi0_gen[N_Pi0_gen]/F");		
 
+	Pi0Events->Branch( "nIsoGamma0p3Eta_gen", nIsoGamma0p3Eta_gen, "nIsoGamma0p3Eta_gen[N_Eta_gen]/I");		
+	Pi0Events->Branch( "nIsoGamma0p2Eta_gen", nIsoGamma0p2Eta_gen, "nIsoGamma0p2Eta_gen[N_Eta_gen]/I");		
+	Pi0Events->Branch( "nIsoGamma0p1Eta_gen", nIsoGamma0p1Eta_gen, "nIsoGamma0p1Eta_gen[N_Eta_gen]/I");		
 	Pi0Events->Branch( "ptEta_gen", ptEta_gen, "ptEta_gen[N_Eta_gen]/F");		
 	Pi0Events->Branch( "etaEta_gen", etaEta_gen, "etaEta_gen[N_Eta_gen]/F");		
 	Pi0Events->Branch( "phiEta_gen", phiEta_gen, "phiEta_gen[N_Eta_gen]/F");		
@@ -1820,6 +1911,9 @@ void Pi0Tuplizer::resetBranches()
 
 	for(int i=0;i<NPI0MAX;i++)
 	{
+		nIsoGamma0p3Pi0_gen[i] = 0;
+		nIsoGamma0p2Pi0_gen[i] = 0;
+		nIsoGamma0p1Pi0_gen[i] = 0;
 		ptPi0_gen[i] = 0;
 		etaPi0_gen[i] = 0;
 		phiPi0_gen[i] = 0;
@@ -1833,6 +1927,9 @@ void Pi0Tuplizer::resetBranches()
 		etaG2_Pi0_gen[i] = 0;
 		phiG2_Pi0_gen[i] = 0;
 		
+		nIsoGamma0p3Eta_gen[i] = 0;
+		nIsoGamma0p2Eta_gen[i] = 0;
+		nIsoGamma0p1Eta_gen[i] = 0;
 		ptEta_gen[i] = 0;
 		etaEta_gen[i] = 0;
 		phiEta_gen[i] = 0;
