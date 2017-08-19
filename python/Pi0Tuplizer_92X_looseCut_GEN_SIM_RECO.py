@@ -29,7 +29,7 @@ process.load("DQMOffline.Configuration.DQMOfflineMC_cff")
 
 process.GlobalTag.globaltag = '92X_upgrade2017_realistic_v10'
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1000) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 
 process.MessageLogger.cerr.FwkReport.reportEvery = 10000
 process.options = cms.untracked.PSet(
@@ -40,7 +40,8 @@ process.options = cms.untracked.PSet(
 #load input file
 process.source = cms.Source('PoolSource',
     fileNames = cms.untracked.vstring(
-        'file:/afs/cern.ch/work/z/zhicaiz/public/release/PiZero_git/CMSSW_9_2_8/src/PiZero/Pi0Tuplizer/python/step2_1.root'
+        #'file:/afs/cern.ch/work/z/zhicaiz/public/release/PiZero_git/CMSSW_9_2_8/src/PiZero/Pi0Tuplizer/python/step2_1.root'
+        'file:/afs/cern.ch/work/z/zhicaiz/public/release/PiZero_git/CMSSW_9_2_8/src/PiZero/Pi0Tuplizer/python/step2_10_eta.root'
     )
 )
 

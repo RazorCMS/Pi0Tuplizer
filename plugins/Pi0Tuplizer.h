@@ -164,6 +164,7 @@ private:
 
 	int 	N_Pi0_rec;
 	int 	N_Pi0_gen;
+	int 	N_Pi0_genall;
 	int 	N_Pi0_match;
 	int 	N_ebPi0_rec;
 	int 	N_eePi0_rec;
@@ -176,6 +177,7 @@ private:
 	
 	int 	N_Eta_rec;
 	int 	N_Eta_gen;
+	int 	N_Eta_genall;
 	int 	N_Eta_match;
 	int 	N_ebEta_rec;
 	int 	N_eeEta_rec;
@@ -185,6 +187,13 @@ private:
 	int 	N_ebRecHit_Eta_;
 	int 	N_eeRecHit_Eta_;
 	int 	N_esRecHit_Eta_;
+
+	int 	nIsoGamma0p3Pi0_genall[NPI0MAX];	
+	int 	nIsoGamma0p2Pi0_genall[NPI0MAX];	
+	int 	nIsoGamma0p1Pi0_genall[NPI0MAX];	
+	float 	ptPi0_genall[NPI0MAX];	
+	float 	etaPi0_genall[NPI0MAX];	
+	float 	phiPi0_genall[NPI0MAX];	
 
 	int 	nIsoGamma0p3Pi0_gen[NPI0MAX];	
 	int 	nIsoGamma0p2Pi0_gen[NPI0MAX];	
@@ -201,6 +210,13 @@ private:
 	float 	ptG2_Pi0_gen[NPI0MAX];	
 	float 	etaG2_Pi0_gen[NPI0MAX];	
 	float 	phiG2_Pi0_gen[NPI0MAX];	
+
+	int 	nIsoGamma0p3Eta_genall[NPI0MAX];	
+	int 	nIsoGamma0p2Eta_genall[NPI0MAX];	
+	int 	nIsoGamma0p1Eta_genall[NPI0MAX];	
+	float 	ptEta_genall[NPI0MAX];	
+	float 	etaEta_genall[NPI0MAX];	
+	float 	phiEta_genall[NPI0MAX];	
 
 	int 	nIsoGamma0p3Eta_gen[NPI0MAX];	
 	int 	nIsoGamma0p2Eta_gen[NPI0MAX];	
@@ -320,6 +336,8 @@ private:
 	vector<float>  ebS1S9_Eta_;
 	vector<float>  eeS1S9_Eta_;
 
+	vector<int> GammaIndex_Pi0_;
+	vector<int> GammaIndex_Eta_;
 	vector<TLorentzVector> Gamma1MC_Pi0_;
 	vector<TLorentzVector> Gamma1MC_Eta_;
 	vector<TLorentzVector> Gamma2MC_Pi0_;

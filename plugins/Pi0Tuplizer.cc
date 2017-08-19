@@ -581,8 +581,9 @@ void Pi0Tuplizer::recoDiPhoEvents_EB(bool isPi0_)
 
 	int i=0;
 	
+	cout<<"DEBUG recoDiphoEvents 000  _EB  "<<isPi0_<<endl;
 	if(MCAssoc_ && (N_Pi0_match==0) && (N_Eta_match==0)) return;	
-	cout<<"DEBUG recoDiphoEvents 001  _EB"<<endl;
+	cout<<"DEBUG recoDiphoEvents 001  _EB  "<<isPi0_<<endl;
 
 	for(unsigned int i=0;i<ebclusters_Pi0_MC1_index.size();i++)
 	{
@@ -1127,10 +1128,31 @@ void Pi0Tuplizer::GetMCTruth()
 {
 	for(size_t iG=0; iG<genParticles->size();iG++)
         {
+		//cout<<"DEBUG   genP:  "<<iG<<"   id= "<<(*genParticles)[iG].pdgId()<<"  status= "<<(*genParticles)[iG].status()<<endl;
+			
+		if((*genParticles)[iG].status()!=2) continue;
+
 		unsigned int ndau = (*genParticles)[iG].numberOfDaughters();
-		if(ndau != 2 ) continue;	
 		if(((*genParticles)[iG].pdgId() != 111) && ((*genParticles)[iG].pdgId() != 221)) continue;
 
+		if((*genParticles)[iG].pdgId() == 111)
+		{
+			ptPi0_genall[N_Pi0_genall] = (*genParticles)[iG].pt(); 	
+			etaPi0_genall[N_Pi0_genall] = (*genParticles)[iG].p4().Eta(); 	
+			phiPi0_genall[N_Pi0_genall] = (*genParticles)[iG].p4().Phi(); 		
+			N_Pi0_genall ++;
+		}
+
+		if((*genParticles)[iG].pdgId() == 221)
+		{
+			ptEta_genall[N_Eta_genall] = (*genParticles)[iG].pt(); 	
+			etaEta_genall[N_Eta_genall] = (*genParticles)[iG].p4().Eta(); 	
+			phiEta_genall[N_Eta_genall] = (*genParticles)[iG].p4().Phi(); 		
+			N_Eta_genall ++;
+		}
+
+		
+		if(ndau != 2 ) continue;	
 		bool isDiphoton = true;	
 		for (unsigned int jD=0; jD < ndau; ++jD) 
                 {
@@ -1159,6 +1181,7 @@ void Pi0Tuplizer::GetMCTruth()
 			}
 			Gamma1MC_Pi0_.push_back(gamma1_temp);
 			Gamma2MC_Pi0_.push_back(gamma2_temp);
+			GammaIndex_Pi0_.push_back(N_Pi0_genall-1);
 		}
 		//fill GEN eta
 		if((*genParticles)[iG].pdgId() == 221)
@@ -1179,14 +1202,201 @@ void Pi0Tuplizer::GetMCTruth()
 			}
 			Gamma1MC_Eta_.push_back(gamma1_temp);
 			Gamma2MC_Eta_.push_back(gamma2_temp);
+			GammaIndex_Eta_.push_back(N_Eta_genall-1);
 		}
 	}
 
 	N_Pi0_gen = Gamma2MC_Pi0_.size();
 	N_Eta_gen = Gamma2MC_Eta_.size();
 	
-	cout<<"DEBUG  = number of true pi0s: "<<Gamma2MC_Pi0_.size()<<endl;	
-	cout<<"DEBUG  = number of true etas: "<<Gamma2MC_Eta_.size()<<endl;	
+	cout<<"DEBUG  = number of true pi0s(all, gg): "<<N_Pi0_genall<<"   "<<Gamma2MC_Pi0_.size()<<endl;	
+	cout<<"DEBUG  = number of true etas(all, gg): "<<N_Eta_genall<<"   "<<Gamma2MC_Eta_.size()<<endl;	
+
+	for(int i=0;i<N_Pi0_genall && i<NPI0MAX;i++)
+	{
+		//calculate how many gammas from other pi0/eta are in this pi0 cone		
+		for(int j=0;j<N_Pi0_gen;j++)
+		{
+			if(GammaIndex_Pi0_[j] == i) continue;
+		
+			double dR1_this = GetDeltaR(Gamma1MC_Pi0_[j].Eta(), etaPi0_genall[i], Gamma1MC_Pi0_[j].Phi(), phiPi0_genall[i]);
+			double dR2_this = GetDeltaR(Gamma2MC_Pi0_[j].Eta(), etaPi0_genall[i], Gamma2MC_Pi0_[j].Phi(), phiPi0_genall[i]);
+			if(dR1_this > 0.3 && dR2_this > 0.3) continue;
+			
+			if(dR1_this < 0.1)
+			{
+				nIsoGamma0p3Pi0_genall[i] += 1;
+				nIsoGamma0p2Pi0_genall[i] += 1;
+				nIsoGamma0p1Pi0_genall[i] += 1;
+			}
+			else if(dR1_this < 0.2)
+			{
+				
+				nIsoGamma0p3Pi0_genall[i] += 1;
+				nIsoGamma0p2Pi0_genall[i] += 1;
+			}
+			else if(dR1_this < 0.3)
+			{
+				nIsoGamma0p3Pi0_genall[i] += 1;
+			}
+
+			if(dR2_this < 0.1)
+			{
+				nIsoGamma0p3Pi0_genall[i] += 1;
+				nIsoGamma0p2Pi0_genall[i] += 1;
+				nIsoGamma0p1Pi0_genall[i] += 1;
+			}
+			else if(dR2_this < 0.2)
+			{
+				
+				nIsoGamma0p3Pi0_genall[i] += 1;
+				nIsoGamma0p2Pi0_genall[i] += 1;
+			}
+			else if(dR2_this < 0.3)
+			{
+				nIsoGamma0p3Pi0_genall[i] += 1;
+			}
+
+		}
+
+		for(int j=0;j<N_Eta_gen;j++)
+		{
+			double dR1_this = GetDeltaR(Gamma1MC_Eta_[j].Eta(), etaPi0_genall[i], Gamma1MC_Eta_[j].Phi(), phiPi0_genall[i]);
+			double dR2_this = GetDeltaR(Gamma2MC_Eta_[j].Eta(), etaPi0_genall[i], Gamma2MC_Eta_[j].Phi(), phiPi0_genall[i]);
+			if(dR1_this > 0.3 && dR2_this > 0.3) continue;
+			
+			if(dR1_this < 0.1)
+			{
+				nIsoGamma0p3Pi0_genall[i] += 1;
+				nIsoGamma0p2Pi0_genall[i] += 1;
+				nIsoGamma0p1Pi0_genall[i] += 1;
+			}
+			else if(dR1_this < 0.2)
+			{
+				
+				nIsoGamma0p3Pi0_genall[i] += 1;
+				nIsoGamma0p2Pi0_genall[i] += 1;
+			}
+			else if(dR1_this < 0.3)
+			{
+				nIsoGamma0p3Pi0_genall[i] += 1;
+			}
+
+			if(dR2_this < 0.1)
+			{
+				nIsoGamma0p3Pi0_genall[i] += 1;
+				nIsoGamma0p2Pi0_genall[i] += 1;
+				nIsoGamma0p1Pi0_genall[i] += 1;
+			}
+			else if(dR2_this < 0.2)
+			{
+				
+				nIsoGamma0p3Pi0_genall[i] += 1;
+				nIsoGamma0p2Pi0_genall[i] += 1;
+			}
+			else if(dR2_this < 0.3)
+			{
+				nIsoGamma0p3Pi0_genall[i] += 1;
+			}
+
+		}
+
+	}
+
+
+	for(int i=0;i<N_Eta_genall && i<NPI0MAX;i++)
+	{
+		//calculate how many gammas from other pi0/eta are in this pi0 cone		
+		for(int j=0;j<N_Eta_gen;j++)
+		{
+			if(GammaIndex_Eta_[j] == i) continue;
+		
+			double dR1_this = GetDeltaR(Gamma1MC_Eta_[j].Eta(), etaEta_genall[i], Gamma1MC_Eta_[j].Phi(), phiEta_genall[i]);
+			double dR2_this = GetDeltaR(Gamma2MC_Eta_[j].Eta(), etaEta_genall[i], Gamma2MC_Eta_[j].Phi(), phiEta_genall[i]);
+			if(dR1_this > 0.3 && dR2_this > 0.3) continue;
+			
+			if(dR1_this < 0.1)
+			{
+				nIsoGamma0p3Eta_genall[i] += 1;
+				nIsoGamma0p2Eta_genall[i] += 1;
+				nIsoGamma0p1Eta_genall[i] += 1;
+			}
+			else if(dR1_this < 0.2)
+			{
+				
+				nIsoGamma0p3Eta_genall[i] += 1;
+				nIsoGamma0p2Eta_genall[i] += 1;
+			}
+			else if(dR1_this < 0.3)
+			{
+				nIsoGamma0p3Eta_genall[i] += 1;
+			}
+
+			if(dR2_this < 0.1)
+			{
+				nIsoGamma0p3Eta_genall[i] += 1;
+				nIsoGamma0p2Eta_genall[i] += 1;
+				nIsoGamma0p1Eta_genall[i] += 1;
+			}
+			else if(dR2_this < 0.2)
+			{
+				
+				nIsoGamma0p3Eta_genall[i] += 1;
+				nIsoGamma0p2Eta_genall[i] += 1;
+			}
+			else if(dR2_this < 0.3)
+			{
+				nIsoGamma0p3Eta_genall[i] += 1;
+			}
+
+		}
+
+		for(int j=0;j<N_Pi0_gen;j++)
+		{
+			double dR1_this = GetDeltaR(Gamma1MC_Pi0_[j].Eta(), etaEta_genall[i], Gamma1MC_Pi0_[j].Phi(), phiEta_genall[i]);
+			double dR2_this = GetDeltaR(Gamma2MC_Pi0_[j].Eta(), etaEta_genall[i], Gamma2MC_Pi0_[j].Phi(), phiEta_genall[i]);
+			if(dR1_this > 0.3 && dR2_this > 0.3) continue;
+			
+			if(dR1_this < 0.1)
+			{
+				nIsoGamma0p3Eta_genall[i] += 1;
+				nIsoGamma0p2Eta_genall[i] += 1;
+				nIsoGamma0p1Eta_genall[i] += 1;
+			}
+			else if(dR1_this < 0.2)
+			{
+				
+				nIsoGamma0p3Eta_genall[i] += 1;
+				nIsoGamma0p2Eta_genall[i] += 1;
+			}
+			else if(dR1_this < 0.3)
+			{
+				nIsoGamma0p3Eta_genall[i] += 1;
+			}
+
+			if(dR2_this < 0.1)
+			{
+				nIsoGamma0p3Eta_genall[i] += 1;
+				nIsoGamma0p2Eta_genall[i] += 1;
+				nIsoGamma0p1Eta_genall[i] += 1;
+			}
+			else if(dR2_this < 0.2)
+			{
+				
+				nIsoGamma0p3Eta_genall[i] += 1;
+				nIsoGamma0p2Eta_genall[i] += 1;
+			}
+			else if(dR2_this < 0.3)
+			{
+				nIsoGamma0p3Eta_genall[i] += 1;
+			}
+
+		}
+
+	}
+
+
+
 
 	for(int i=0;i<N_Pi0_gen && i<NPI0MAX;i++)
 	{
@@ -1202,7 +1412,7 @@ void Pi0Tuplizer::GetMCTruth()
 		ptG2_Pi0_gen[i] = Gamma2MC_Pi0_[i].Pt();
 		etaG2_Pi0_gen[i] = Gamma2MC_Pi0_[i].Eta();
 		phiG2_Pi0_gen[i] = Gamma2MC_Pi0_[i].Phi();
-		//calculate how many gammas from other pi0 are in this pi0 cone
+		//calculate how many gammas from other pi0/eta are in this pi0 cone
 		for(int j=0;j<N_Pi0_gen;j++)
 		{
 			if(j==i) continue;
@@ -1244,6 +1454,49 @@ void Pi0Tuplizer::GetMCTruth()
 				nIsoGamma0p3Pi0_gen[i] += 1;
 			}
 		}
+		
+		for(int j=0;j<N_Eta_gen;j++)
+		{
+			double dR1_this = Gamma1MC_Eta_[j].DeltaR(Gamma1MC_Pi0_[i]+Gamma2MC_Pi0_[i]);
+			double dR2_this = Gamma2MC_Eta_[j].DeltaR(Gamma1MC_Pi0_[i]+Gamma2MC_Pi0_[i]);
+			if(dR1_this > 0.3 && dR2_this > 0.3) continue;
+
+			if(dR1_this < 0.1)
+			{
+				nIsoGamma0p3Pi0_gen[i] += 1;
+				nIsoGamma0p2Pi0_gen[i] += 1;
+				nIsoGamma0p1Pi0_gen[i] += 1;
+			}
+			else if(dR1_this < 0.2)
+			{
+				
+				nIsoGamma0p3Pi0_gen[i] += 1;
+				nIsoGamma0p2Pi0_gen[i] += 1;
+			}
+			else if(dR1_this < 0.3)
+			{
+				nIsoGamma0p3Pi0_gen[i] += 1;
+			}
+
+			if(dR2_this < 0.1)
+			{
+				nIsoGamma0p3Pi0_gen[i] += 1;
+				nIsoGamma0p2Pi0_gen[i] += 1;
+				nIsoGamma0p1Pi0_gen[i] += 1;
+			}
+			else if(dR2_this < 0.2)
+			{
+				
+				nIsoGamma0p3Pi0_gen[i] += 1;
+				nIsoGamma0p2Pi0_gen[i] += 1;
+			}
+			else if(dR2_this < 0.3)
+			{
+				nIsoGamma0p3Pi0_gen[i] += 1;
+			}
+		}
+
+
 	}
 
 	for(int i=0;i<N_Eta_gen && i<NPI0MAX;i++)
@@ -1303,6 +1556,49 @@ void Pi0Tuplizer::GetMCTruth()
 			}
 		}
 
+		for(int j=0;j<N_Pi0_gen;j++)
+		{
+			double dR1_this = Gamma1MC_Pi0_[j].DeltaR(Gamma1MC_Eta_[i]+Gamma2MC_Eta_[i]);
+			double dR2_this = Gamma2MC_Pi0_[j].DeltaR(Gamma1MC_Eta_[i]+Gamma2MC_Eta_[i]);
+			if(dR1_this > 0.3 && dR2_this > 0.3) continue;
+
+			if(dR1_this < 0.1)
+			{
+				nIsoGamma0p3Eta_gen[i] += 1;
+				nIsoGamma0p2Eta_gen[i] += 1;
+				nIsoGamma0p1Eta_gen[i] += 1;
+			}
+			else if(dR1_this < 0.2)
+			{
+				
+				nIsoGamma0p3Eta_gen[i] += 1;
+				nIsoGamma0p2Eta_gen[i] += 1;
+			}
+			else if(dR1_this < 0.3)
+			{
+				nIsoGamma0p3Eta_gen[i] += 1;
+			}
+
+			if(dR2_this < 0.1)
+			{
+				nIsoGamma0p3Eta_gen[i] += 1;
+				nIsoGamma0p2Eta_gen[i] += 1;
+				nIsoGamma0p1Eta_gen[i] += 1;
+			}
+			else if(dR2_this < 0.2)
+			{
+				
+				nIsoGamma0p3Eta_gen[i] += 1;
+				nIsoGamma0p2Eta_gen[i] += 1;
+			}
+			else if(dR2_this < 0.3)
+			{
+				nIsoGamma0p3Eta_gen[i] += 1;
+			}
+		}
+
+
+
 	}
 
 }
@@ -1321,10 +1617,12 @@ if(isPi0)
 		eeclusters_Pi0_MC1_index.push_back(-1);
 		eeclusters_Pi0_MC2_index.push_back(-1);
 	}
-
+	
+//	cout<<"DEBUG   entering MCTruthAssoc for pi0, gen size = "<<Gamma1MC_Pi0_.size()<<endl;
+	
 	for(unsigned int i=0;i<Gamma1MC_Pi0_.size();i++)
 	{
-		//cout<<"DEBUG  trying to match GEN pi0s with photon energies:  "<<Gamma1MC_Pi0_[i].E()<<"  "<<Gamma2MC_Pi0_[i].E()<<endl;
+//		cout<<"DEBUG  trying to match GEN pi0s with photon energies:  "<<Gamma1MC_Pi0_[i].E()<<"  "<<Gamma2MC_Pi0_[i].E()<<endl;
 		double min_deltaR_G1 = 9999.9;
 		double min_deltaR_G2 = 9999.9;
 		bool G1_found_in_eb = false;
@@ -1337,7 +1635,7 @@ if(isPi0)
 		double G2_cluster_eta = -9999.99;
 
 		//match G1
-		//cout<<"DEBUG   pi0, trying to match G1...."<<endl;
+//		cout<<"DEBUG   pi0, trying to match G1...."<<endl;
 		for(unsigned int j=0;j<ebclusters_Pi0_.size();j++)
 		{
 			if(ebclusters_Pi0_MC1_index[j]>=0 || ebclusters_Pi0_MC2_index[j]>=0) continue;
@@ -1369,7 +1667,7 @@ if(isPi0)
 		if((!G1_found_in_eb) && (!G1_found_in_ee)) continue;
 		else
 		{
-			//cout<<"DEBUG   pi0, G1 matched, now trying to match G2..."<<endl;
+//			cout<<"DEBUG   pi0, G1 matched, now trying to match G2..."<<endl;
 			for(unsigned int j=0;j<ebclusters_Pi0_.size() && j!=G1_cluster_ind ;j++)
                         {
 				if(ebclusters_Pi0_MC1_index[j]>=0 || ebclusters_Pi0_MC2_index[j]>=0) continue;
@@ -1405,7 +1703,9 @@ if(isPi0)
 			if(G1_found_in_ee) eeclusters_Pi0_MC1_index[G1_cluster_ind] = i;
 			if(G2_found_in_eb) ebclusters_Pi0_MC2_index[G2_cluster_ind] = i;
 			if(G2_found_in_ee) eeclusters_Pi0_MC2_index[G2_cluster_ind] = i;
+#ifdef DEBUG
 			cout<<"DEBUG  GEN pi0 "<<i<<" matched to reco pi0 (g1, g2) = .... ("<<G1_cluster_ind<<(G1_found_in_eb ? " EB " : " EE ")<<", "<<G2_cluster_ind<<(G2_found_in_eb ? " EB " : " EE ")<<"); \n E1/2 = "<<Gamma1MC_Pi0_[i].E() <<" / "<<Gamma2MC_Pi0_[i].E()<<"  Eta1/2(gen) = "<<Gamma1MC_Pi0_[i].Eta() <<" / "<<Gamma2MC_Pi0_[i].Eta() <<" Eta1/2(reco) = "<<G1_cluster_eta<<" / "<<G2_cluster_eta<< " deltaR1/2 = "<<min_deltaR_G1<<" / "<<min_deltaR_G2<<endl;
+#endif
 			N_Pi0_match ++;
 		}
 	}
@@ -1424,8 +1724,11 @@ else
 		eeclusters_Eta_MC2_index.push_back(-1);
 	}
 
+//	cout<<"DEBUG   entering MCTruthAssoc for eta, gen size = "<<Gamma1MC_Eta_.size()<<endl;
+
 	for(unsigned int i=0;i<Gamma1MC_Eta_.size();i++)
 	{
+//		cout<<"DEBUG  trying to match GEN etas with photon energies:  "<<Gamma1MC_Eta_[i].E()<<"  "<<Gamma2MC_Eta_[i].E()<<endl;
 		double min_deltaR_G1 = 9999.9;
 		double min_deltaR_G2 = 9999.9;
 		bool G1_found_in_eb = false;
@@ -1436,6 +1739,7 @@ else
 		unsigned int G2_cluster_ind = -1;
 
 		//match G1
+//		cout<<"DEBUG   eta, trying to match G1...."<<endl;
 		for(unsigned int j=0;j<ebclusters_Eta_.size();j++)
 		{
 			if(ebclusters_Eta_MC1_index[j]>=0 || ebclusters_Eta_MC2_index[j]>=0) continue;
@@ -1465,6 +1769,7 @@ else
 		if((!G1_found_in_eb) && (!G1_found_in_ee)) continue;
 		else
 		{
+//			cout<<"DEBUG   eta, G1 matched, now trying to match G2..."<<endl;
 			for(unsigned int j=0;j<ebclusters_Eta_.size() && j!=G1_cluster_ind ;j++)
                         {
 				if(ebclusters_Eta_MC1_index[j]>=0 || ebclusters_Eta_MC2_index[j]>=0) continue;
@@ -1588,9 +1893,7 @@ void Pi0Tuplizer::loadEvent_Eta(const edm::Event& iEvent, const edm::EventSetup&
 	ebS1S9_Eta_.clear();
 	eeS1S9_Eta_.clear();
 	
-	Gamma1MC_Pi0_.clear();
-	Gamma2MC_Pi0_.clear();
-	
+
 	foundEB = false;
 	foundEE = false;
 	foundES = false;
@@ -1756,9 +2059,11 @@ void Pi0Tuplizer::setBranches()
 	Pi0Events->Branch( "N_Pair_rec", &N_Pair_rec, "N_Pair_rec/I");
 	Pi0Events->Branch( "N_Pi0_rec", &N_Pi0_rec, "N_Pi0_rec/I");
 	Pi0Events->Branch( "N_Pi0_gen", &N_Pi0_gen, "N_Pi0_gen/I");
+	Pi0Events->Branch( "N_Pi0_genall", &N_Pi0_genall, "N_Pi0_genall/I");
 	Pi0Events->Branch( "N_Pi0_match", &N_Pi0_match, "N_Pi0_match/I");
 	Pi0Events->Branch( "N_Eta_rec", &N_Eta_rec, "N_Eta_rec/I");
 	Pi0Events->Branch( "N_Eta_gen", &N_Eta_gen, "N_Eta_gen/I");
+	Pi0Events->Branch( "N_Eta_genall", &N_Eta_genall, "N_Eta_genall/I");
 	Pi0Events->Branch( "N_Eta_match", &N_Eta_match, "N_Eta_match/I");
 	
 	Pi0Events->Branch( "N_ebPair_rec", &N_ebPair_rec, "N_ebPair_rec/I");
@@ -1768,6 +2073,13 @@ void Pi0Tuplizer::setBranches()
 	Pi0Events->Branch( "N_eePair_rec", &N_eePair_rec, "N_eePair_rec/I");
 	Pi0Events->Branch( "N_eePi0_rec", &N_eePi0_rec, "N_eePi0_rec/I");
 	Pi0Events->Branch( "N_eeEta_rec", &N_eeEta_rec, "N_eeEta_rec/I");
+
+	Pi0Events->Branch( "nIsoGamma0p3Pi0_genall", nIsoGamma0p3Pi0_genall, "nIsoGamma0p3Pi0_genall[N_Pi0_genall]/I");		
+	Pi0Events->Branch( "nIsoGamma0p2Pi0_genall", nIsoGamma0p2Pi0_genall, "nIsoGamma0p2Pi0_genall[N_Pi0_genall]/I");		
+	Pi0Events->Branch( "nIsoGamma0p1Pi0_genall", nIsoGamma0p1Pi0_genall, "nIsoGamma0p1Pi0_genall[N_Pi0_genall]/I");		
+	Pi0Events->Branch( "ptPi0_genall", ptPi0_genall, "ptPi0_genall[N_Pi0_genall]/F");		
+	Pi0Events->Branch( "etaPi0_genall", etaPi0_genall, "etaPi0_genall[N_Pi0_genall]/F");		
+	Pi0Events->Branch( "phiPi0_genall", phiPi0_genall, "phiPi0_genall[N_Pi0_genall]/F");		
 
 	Pi0Events->Branch( "nIsoGamma0p3Pi0_gen", nIsoGamma0p3Pi0_gen, "nIsoGamma0p3Pi0_gen[N_Pi0_gen]/I");		
 	Pi0Events->Branch( "nIsoGamma0p2Pi0_gen", nIsoGamma0p2Pi0_gen, "nIsoGamma0p2Pi0_gen[N_Pi0_gen]/I");		
@@ -1784,6 +2096,13 @@ void Pi0Tuplizer::setBranches()
 	Pi0Events->Branch( "ptG2_Pi0_gen", ptG2_Pi0_gen, "ptG2_Pi0_gen[N_Pi0_gen]/F");		
 	Pi0Events->Branch( "etaG2_Pi0_gen", etaG2_Pi0_gen, "etaG2_Pi0_gen[N_Pi0_gen]/F");		
 	Pi0Events->Branch( "phiG2_Pi0_gen", phiG2_Pi0_gen, "phiG2_Pi0_gen[N_Pi0_gen]/F");		
+
+	Pi0Events->Branch( "nIsoGamma0p3Eta_genall", nIsoGamma0p3Eta_genall, "nIsoGamma0p3Eta_genall[N_Eta_genall]/I");		
+	Pi0Events->Branch( "nIsoGamma0p2Eta_genall", nIsoGamma0p2Eta_genall, "nIsoGamma0p2Eta_genall[N_Eta_genall]/I");		
+	Pi0Events->Branch( "nIsoGamma0p1Eta_genall", nIsoGamma0p1Eta_genall, "nIsoGamma0p1Eta_genall[N_Eta_genall]/I");		
+	Pi0Events->Branch( "ptEta_genall", ptEta_genall, "ptEta_genall[N_Eta_genall]/F");		
+	Pi0Events->Branch( "etaEta_genall", etaEta_genall, "etaEta_genall[N_Eta_genall]/F");		
+	Pi0Events->Branch( "phiEta_genall", phiEta_genall, "phiEta_genall[N_Eta_genall]/F");		
 
 	Pi0Events->Branch( "nIsoGamma0p3Eta_gen", nIsoGamma0p3Eta_gen, "nIsoGamma0p3Eta_gen[N_Eta_gen]/I");		
 	Pi0Events->Branch( "nIsoGamma0p2Eta_gen", nIsoGamma0p2Eta_gen, "nIsoGamma0p2Eta_gen[N_Eta_gen]/I");		
@@ -1881,11 +2200,13 @@ void Pi0Tuplizer::resetBranches()
 	N_eePair_rec = 0;
 	N_Pi0_rec = 0;
 	N_Pi0_gen = 0;
+	N_Pi0_genall = 0;
 	N_Pi0_match = 0;
 	N_ebPi0_rec = 0;
 	N_eePi0_rec = 0;
 	N_Eta_rec = 0;
 	N_Eta_gen = 0;
+	N_Eta_genall = 0;
 	N_Eta_match = 0;
 	N_ebEta_rec = 0;
 	N_eeEta_rec = 0;
@@ -1911,6 +2232,14 @@ void Pi0Tuplizer::resetBranches()
 
 	for(int i=0;i<NPI0MAX;i++)
 	{
+
+		nIsoGamma0p3Pi0_genall[i] = 0;
+		nIsoGamma0p2Pi0_genall[i] = 0;
+		nIsoGamma0p1Pi0_genall[i] = 0;
+		ptPi0_genall[i] = 0;
+		etaPi0_genall[i] = 0;
+		phiPi0_genall[i] = 0;
+
 		nIsoGamma0p3Pi0_gen[i] = 0;
 		nIsoGamma0p2Pi0_gen[i] = 0;
 		nIsoGamma0p1Pi0_gen[i] = 0;
@@ -1927,6 +2256,13 @@ void Pi0Tuplizer::resetBranches()
 		etaG2_Pi0_gen[i] = 0;
 		phiG2_Pi0_gen[i] = 0;
 		
+		nIsoGamma0p3Eta_genall[i] = 0;
+		nIsoGamma0p2Eta_genall[i] = 0;
+		nIsoGamma0p1Eta_genall[i] = 0;
+		ptEta_genall[i] = 0;
+		etaEta_genall[i] = 0;
+		phiEta_genall[i] = 0;
+
 		nIsoGamma0p3Eta_gen[i] = 0;
 		nIsoGamma0p2Eta_gen[i] = 0;
 		nIsoGamma0p1Eta_gen[i] = 0;
@@ -1999,6 +2335,15 @@ void Pi0Tuplizer::resetBranches()
 	pho_x=0;
 	pho_y=0;
 	pho_z=0;
+
+	GammaIndex_Pi0_.clear();
+	Gamma1MC_Pi0_.clear();
+	Gamma2MC_Pi0_.clear();
+
+	Gamma1MC_Eta_.clear();
+	GammaIndex_Eta_.clear();
+	Gamma2MC_Eta_.clear();
+	
 }
 
 void Pi0Tuplizer::resetPhoBranches()
