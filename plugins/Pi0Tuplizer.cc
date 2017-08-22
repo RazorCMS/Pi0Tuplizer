@@ -131,9 +131,7 @@ void Pi0Tuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 	resetPhoBranches();
 	if(foundEE) recoPhoCluster_EE(true);//reconstruct photon clusters in EE
 	
-
 	if(MCAssoc_) MCTruthAssoc(true, MC_Asssoc_DeltaR);
-	
 
 	if(FillDiPhotonNtuple_) recoDiPhoEvents_EB(true);//reconstruct pi0/eta events from the photon clusters in EB
 	N_ebPair_rec += N_Pair_rec;
@@ -765,7 +763,7 @@ void Pi0Tuplizer::recoDiPhoEvents_EB(bool isPi0_)
 				iEtaG1_rec[N_Pair_rec] =  id_1.ieta();
 				iEtaG2_rec[N_Pair_rec] =  id_2.ieta();
 				iPhiG1_rec[N_Pair_rec] =  id_1.iphi();
-				iPhiG1_rec[N_Pair_rec] =  id_2.iphi();
+				iPhiG2_rec[N_Pair_rec] =  id_2.iphi();
 				
 				cout<<"DEBUG recoDiphoEvents 007"<<endl;
 				if((Inverted && MCInverted ) || ( (!Inverted) && (!MCInverted)))
@@ -1041,7 +1039,7 @@ void Pi0Tuplizer::recoDiPhoEvents_EE(bool isPi0_)
 				iXG1_rec[N_Pair_rec] =  id_1.ix();
 				iXG2_rec[N_Pair_rec] =  id_2.ix();
 				iYG1_rec[N_Pair_rec] =  id_1.iy();
-				iYG1_rec[N_Pair_rec] =  id_2.iy();
+				iYG2_rec[N_Pair_rec] =  id_2.iy();
 	
 				if(isPi0_ && eeclusters_Pi0_MC1_index[ind1]>=0) 
 				{
@@ -1622,7 +1620,7 @@ if(isPi0)
 	
 	for(unsigned int i=0;i<Gamma1MC_Pi0_.size();i++)
 	{
-//		cout<<"DEBUG  trying to match GEN pi0s with photon energies:  "<<Gamma1MC_Pi0_[i].E()<<"  "<<Gamma2MC_Pi0_[i].E()<<endl;
+//		cout<<"DEBUG  trying to match GEN pi0s with photon E/Eta/Phi:  "<<Gamma1MC_Pi0_[i].E()<<" / "<<Gamma1MC_Pi0_[i].Eta()<<" / "<<Gamma1MC_Pi0_[i].Phi()<<"  "<<Gamma2MC_Pi0_[i].E()<<" / "<<Gamma2MC_Pi0_[i].Eta()<<" / "<<Gamma2MC_Pi0_[i].Phi()<<endl;
 		double min_deltaR_G1 = 9999.9;
 		double min_deltaR_G2 = 9999.9;
 		bool G1_found_in_eb = false;
@@ -1668,8 +1666,9 @@ if(isPi0)
 		else
 		{
 //			cout<<"DEBUG   pi0, G1 matched, now trying to match G2..."<<endl;
-			for(unsigned int j=0;j<ebclusters_Pi0_.size() && j!=G1_cluster_ind ;j++)
+			for(unsigned int j=0;j<ebclusters_Pi0_.size();j++)
                         {
+				if(j==G1_cluster_ind) continue;
 				if(ebclusters_Pi0_MC1_index[j]>=0 || ebclusters_Pi0_MC2_index[j]>=0) continue;
                                 double deltaR_this = GetDeltaR(Gamma2MC_Pi0_[i].Eta(), ebclusters_Pi0_[j].eta(), Gamma2MC_Pi0_[i].Phi(), ebclusters_Pi0_[j].phi());
                                 if(deltaR_this < min_deltaR_G2 && deltaR_this < deltaR)
@@ -1682,8 +1681,9 @@ if(isPi0)
                         }
 			if(!G2_found_in_eb)
 			{
-				for(unsigned int j=0;j<eeclusters_Pi0_.size() && j!=G1_cluster_ind;j++)
+				for(unsigned int j=0;j<eeclusters_Pi0_.size();j++)
                         	{
+					if(j==G1_cluster_ind) continue;
 					if(eeclusters_Pi0_MC1_index[j]>=0 || eeclusters_Pi0_MC2_index[j]>=0) continue;
                                 	double deltaR_this = GetDeltaR(Gamma2MC_Pi0_[i].Eta(), eeclusters_Pi0_[j].eta(), Gamma2MC_Pi0_[i].Phi(), eeclusters_Pi0_[j].phi());
                                 	if(deltaR_this < min_deltaR_G2 && deltaR_this < deltaR)
@@ -1770,8 +1770,9 @@ else
 		else
 		{
 //			cout<<"DEBUG   eta, G1 matched, now trying to match G2..."<<endl;
-			for(unsigned int j=0;j<ebclusters_Eta_.size() && j!=G1_cluster_ind ;j++)
+			for(unsigned int j=0;j<ebclusters_Eta_.size();j++)
                         {
+				if(j==G1_cluster_ind) continue;
 				if(ebclusters_Eta_MC1_index[j]>=0 || ebclusters_Eta_MC2_index[j]>=0) continue;
                                 double deltaR_this = GetDeltaR(Gamma2MC_Eta_[i].Eta(), ebclusters_Eta_[j].eta(), Gamma2MC_Eta_[i].Phi(), ebclusters_Eta_[j].phi());
                                 if(deltaR_this < min_deltaR_G2 && deltaR_this < deltaR)
@@ -1783,8 +1784,9 @@ else
                         }
 			if(!G2_found_in_eb)
 			{
-				for(unsigned int j=0;j<eeclusters_Eta_.size() && j!=G1_cluster_ind;j++)
+				for(unsigned int j=0;j<eeclusters_Eta_.size();j++)
                         	{
+					if(j==G1_cluster_ind) continue;
 					if(eeclusters_Eta_MC1_index[j]>=0 || eeclusters_Eta_MC2_index[j]>=0) continue;
                                 	double deltaR_this = GetDeltaR(Gamma2MC_Eta_[i].Eta(), eeclusters_Eta_[j].eta(), Gamma2MC_Eta_[i].Phi(), eeclusters_Eta_[j].phi());
                                 	if(deltaR_this < min_deltaR_G2 && deltaR_this < deltaR)
@@ -1837,10 +1839,12 @@ void Pi0Tuplizer::loadEvent_Pi0(const edm::Event& iEvent, const edm::EventSetup&
 	eeclusters_Pi0_.clear();
 	ebSeedTime_Pi0_.clear();
 	eeSeedTime_Pi0_.clear();
+
 	ebclusters_Pi0_MC1_index.clear();
 	ebclusters_Pi0_MC2_index.clear();
 	eeclusters_Pi0_MC1_index.clear();
 	eeclusters_Pi0_MC2_index.clear();
+
 
 	ebNxtal_Pi0_.clear();
 	eeNxtal_Pi0_.clear();
@@ -1878,12 +1882,15 @@ void Pi0Tuplizer::loadEvent_Eta(const edm::Event& iEvent, const edm::EventSetup&
 {
 	ebclusters_Eta_.clear();
 	eeclusters_Eta_.clear();
+	ebSeedTime_Eta_.clear();
+	eeSeedTime_Eta_.clear();
+
 	ebclusters_Eta_MC1_index.clear();
 	ebclusters_Eta_MC2_index.clear();
 	eeclusters_Eta_MC1_index.clear();
 	eeclusters_Eta_MC2_index.clear();
-	ebSeedTime_Eta_.clear();
-	eeSeedTime_Eta_.clear();
+
+
 	ebNxtal_Eta_.clear();
 	eeNxtal_Eta_.clear();
 	ebS4S9_Eta_.clear();

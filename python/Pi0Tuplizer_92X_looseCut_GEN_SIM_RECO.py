@@ -40,8 +40,10 @@ process.options = cms.untracked.PSet(
 #load input file
 process.source = cms.Source('PoolSource',
     fileNames = cms.untracked.vstring(
-        #'file:/afs/cern.ch/work/z/zhicaiz/public/release/PiZero_git/CMSSW_9_2_8/src/PiZero/Pi0Tuplizer/python/step2_1.root'
+        #'file:/afs/cern.ch/work/z/zhicaiz/public/release/PiZero_git/CMSSW_9_2_8/src/PiZero/Pi0Tuplizer/python/step2_1_pi0.root',
+        #'file:/afs/cern.ch/work/z/zhicaiz/public/release/PiZero_git/CMSSW_9_2_8/src/PiZero/Pi0Tuplizer/python/step2_107_pi0.root'
         'file:/afs/cern.ch/work/z/zhicaiz/public/release/PiZero_git/CMSSW_9_2_8/src/PiZero/Pi0Tuplizer/python/step2_10_eta.root'
+	#'file:/afs/cern.ch/work/z/zhicaiz/public/release/McM/pi0/CMSSW_9_2_8/src/step2_eta_gg.root'
     )
 )
 
