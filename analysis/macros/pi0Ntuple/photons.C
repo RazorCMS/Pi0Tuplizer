@@ -3,8 +3,10 @@
 void photons()
 {
 
-	string file_in_Name = "../../../pi0Ntuple_Eta.root";
-	string file_out_Name = "photons.root";
+	//string file_in_Name = "/eos/cms/store/group/dpg_ecal/alca_ecalcalib/piZero2017/zhicaiz/Gun_MultiEta_FlatPt-1To15/Gun_FlatPt1to15_MultiEta_withPhotonPtFilter_pythia8/pi0Ntuple_22Aug2017_V2.root";
+	string file_in_Name = "/eos/cms/store/group/dpg_ecal/alca_ecalcalib/piZero2017/zhicaiz/Gun_MultiPion_FlatPt-1To15/Gun_FlatPt1to15_MultiPion_withPhotonPtFilter_pythia8/pi0Ntuple_0.root";
+	//string file_out_Name = "/eos/cms/store/group/dpg_ecal/alca_ecalcalib/piZero2017/zhicaiz/Gun_MultiEta_FlatPt-1To15/Gun_FlatPt1to15_MultiEta_withPhotonPtFilter_pythia8/photons_22Aug2017_V2.root";
+	string file_out_Name = "/eos/cms/store/group/dpg_ecal/alca_ecalcalib/piZero2017/zhicaiz/Gun_MultiPion_FlatPt-1To15/Gun_FlatPt1to15_MultiPion_withPhotonPtFilter_pythia8/photons_0.root";
 	
 	TFile *f_in = new TFile(file_in_Name.c_str(),"READ");
         TTree *tree_in = (TTree*)f_in->Get("ntuples/Pi0Events");
@@ -14,6 +16,7 @@ void photons()
 	
 	bool fromPi0[100];
 	float deltaRG1G2_rec[100];
+	float mPi0_rec[100];
 
 	float enG1_rec[100];
 	float enG2_rec[100];
@@ -45,7 +48,8 @@ void photons()
 
 	bool STr2_fromPi0;	
 	float STr2_DeltaRG1G2;
-	float STr2_eta;
+	float STr2_mPi0_nocor;
+	float STr2_Eta;
 	float STr2_phi;
 	int STr2_iEtaiX;
 	int STr2_iPhiiY;
@@ -64,6 +68,7 @@ void photons()
 	tree_in->SetBranchAddress( "N_Pair_rec",&N_Pair_rec);	
 	tree_in->SetBranchAddress( "fromPi0", 	fromPi0);	
 	tree_in->SetBranchAddress( "deltaRG1G2_rec", 	deltaRG1G2_rec);	
+	tree_in->SetBranchAddress( "mPi0_rec", 	mPi0_rec);	
 	tree_in->SetBranchAddress( "enG1_rec", 	enG1_rec);	
 	tree_in->SetBranchAddress( "enG2_rec", 	enG2_rec);	
 	tree_in->SetBranchAddress( "enG1_true", enG1_true);	
@@ -103,7 +108,8 @@ void photons()
 	Tree_Optim_gamma->Branch("STr2_enG_rec",	&STr2_enG_rec,	"STr2_enG_rec/F");
 	Tree_Optim_gamma->Branch("STr2_enG_true",	&STr2_enG_true,	"STr2_enG_true/F");
 	Tree_Optim_gamma->Branch("STr2_DeltaRG1G2",	&STr2_DeltaRG1G2,	"STr2_DeltaRG1G2/F");
-	Tree_Optim_gamma->Branch("STr2_eta",	&STr2_eta,	"STr2_eta/F");
+	Tree_Optim_gamma->Branch("STr2_mPi0_nocor",	&STr2_mPi0_nocor,	"STr2_mPi0_nocor/F");
+	Tree_Optim_gamma->Branch("STr2_Eta",	&STr2_Eta,	"STr2_Eta/F");
 	Tree_Optim_gamma->Branch("STr2_phi",	&STr2_phi,	"STr2_phi/F");
 	Tree_Optim_gamma->Branch("STr2_Nxtal",	&STr2_Nxtal,	"STr2_Nxtal/I");
 	Tree_Optim_gamma->Branch("STr2_iEtaiX",	&STr2_iEtaiX,	"STr2_iEtaiX/I");
@@ -120,7 +126,8 @@ void photons()
 	Tree_Optim_gamma1->Branch("STr2_enG_rec",	&STr2_enG_rec,	"STr2_enG_rec/F");
 	Tree_Optim_gamma1->Branch("STr2_enG_true",	&STr2_enG_true,	"STr2_enG_true/F");
 	Tree_Optim_gamma1->Branch("STr2_DeltaRG1G2",	&STr2_DeltaRG1G2,	"STr2_DeltaRG1G2/F");
-	Tree_Optim_gamma1->Branch("STr2_eta",	&STr2_eta,	"STr2_eta/F");
+	Tree_Optim_gamma1->Branch("STr2_mPi0_nocor",	&STr2_mPi0_nocor,	"STr2_mPi0_nocor/F");
+	Tree_Optim_gamma1->Branch("STr2_Eta",	&STr2_Eta,	"STr2_Eta/F");
 	Tree_Optim_gamma1->Branch("STr2_phi",	&STr2_phi,	"STr2_phi/F");
 	Tree_Optim_gamma1->Branch("STr2_Nxtal",	&STr2_Nxtal,	"STr2_Nxtal/I");
 	Tree_Optim_gamma1->Branch("STr2_iEtaiX",	&STr2_iEtaiX,	"STr2_iEtaiX/I");
@@ -137,7 +144,8 @@ void photons()
 	Tree_Optim_gamma2->Branch("STr2_enG_rec",	&STr2_enG_rec,	"STr2_enG_rec/F");
 	Tree_Optim_gamma2->Branch("STr2_enG_true",	&STr2_enG_true,	"STr2_enG_true/F");
 	Tree_Optim_gamma2->Branch("STr2_DeltaRG1G2",	&STr2_DeltaRG1G2,	"STr2_DeltaRG1G2/F");
-	Tree_Optim_gamma2->Branch("STr2_eta",	&STr2_eta,	"STr2_eta/F");
+	Tree_Optim_gamma2->Branch("STr2_mPi0_nocor",	&STr2_mPi0_nocor,	"STr2_mPi0_nocor/F");
+	Tree_Optim_gamma2->Branch("STr2_Eta",	&STr2_Eta,	"STr2_Eta/F");
 	Tree_Optim_gamma2->Branch("STr2_phi",	&STr2_phi,	"STr2_phi/F");
 	Tree_Optim_gamma2->Branch("STr2_Nxtal",	&STr2_Nxtal,	"STr2_Nxtal/I");
 	Tree_Optim_gamma2->Branch("STr2_iEtaiX",	&STr2_iEtaiX,	"STr2_iEtaiX/I");
@@ -159,14 +167,15 @@ void photons()
 		{
 			STr2_fromPi0 = fromPi0[j];	
 			STr2_DeltaRG1G2 = deltaRG1G2_rec[j];
+			STr2_mPi0_nocor = mPi0_rec[j];
 
 			STr2_enG_rec = enG1_rec[j];
 			STr2_enG_true = enG1_true[j];
-			STr2_eta = etaG1_rec[j];
+			STr2_Eta = etaG1_rec[j];
 			STr2_phi = phiG1_rec[j];
 			STr2_Nxtal = nxtalG1_rec[j];
-			STr2_iEtaiX = (abs(STr2_eta)<1.479) ? (iEtaG1_rec[j]) : (iXG1_rec[j]);
-			STr2_iPhiiY = (abs(STr2_eta)<1.479) ? (iPhiG1_rec[j]) : (iYG1_rec[j]);
+			STr2_iEtaiX = (abs(STr2_Eta)<1.479) ? (iEtaG1_rec[j]) : (iXG1_rec[j]);
+			STr2_iPhiiY = (abs(STr2_Eta)<1.479) ? (iPhiG1_rec[j]) : (iYG1_rec[j]);
 			STr2_S4S9 = s4s9G1_rec[j];	
 			STr2_S2S9 = s2s9G1_rec[j];	
 			STr2_S1S9 = s1s9G1_rec[j];	
@@ -181,11 +190,11 @@ void photons()
 			
 			STr2_enG_rec = enG2_rec[j];
 			STr2_enG_true = enG2_true[j];
-			STr2_eta = etaG2_rec[j];
+			STr2_Eta = etaG2_rec[j];
 			STr2_phi = phiG2_rec[j];
 			STr2_Nxtal = nxtalG2_rec[j];
-			STr2_iEtaiX = (abs(STr2_eta)<1.479) ? (iEtaG2_rec[j]) : (iXG2_rec[j]);
-			STr2_iPhiiY = (abs(STr2_eta)<1.479) ? (iPhiG2_rec[j]) : (iYG2_rec[j]);
+			STr2_iEtaiX = (abs(STr2_Eta)<1.479) ? (iEtaG2_rec[j]) : (iXG2_rec[j]);
+			STr2_iPhiiY = (abs(STr2_Eta)<1.479) ? (iPhiG2_rec[j]) : (iYG2_rec[j]);
 			STr2_S4S9 = s4s9G2_rec[j];	
 			STr2_S2S9 = s2s9G2_rec[j];	
 			STr2_S1S9 = s1s9G2_rec[j];	

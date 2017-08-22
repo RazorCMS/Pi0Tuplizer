@@ -593,7 +593,8 @@ void Pi0Tuplizer::recoDiPhoEvents_EB(bool isPi0_)
   	{
 		//cout<<"DEBUG recoDiphoEvents 002-1   -  ebcluster "<<i<<endl;
 		if(MCAssoc_ && ( (isPi0_? ebclusters_Pi0_MC1_index[i] : ebclusters_Eta_MC1_index[i]) <0) && ( (isPi0_ ? ebclusters_Pi0_MC2_index[i] : ebclusters_Eta_MC2_index[i]) <0) ) continue;
-		int MC_index_i = isPi0_? ( (ebclusters_Pi0_MC1_index[i]>=0) ? ebclusters_Pi0_MC1_index[i]: ebclusters_Pi0_MC2_index[i]): ( (ebclusters_Eta_MC1_index[i]>=0) ? ebclusters_Eta_MC1_index[i]: ebclusters_Eta_MC2_index[i]);
+		int MC_index_i = -1;
+		if(MCAssoc_) MC_index_i = isPi0_? ( (ebclusters_Pi0_MC1_index[i]>=0) ? ebclusters_Pi0_MC1_index[i]: ebclusters_Pi0_MC2_index[i]): ( (ebclusters_Eta_MC1_index[i]>=0) ? ebclusters_Eta_MC1_index[i]: ebclusters_Eta_MC2_index[i]);
 		
 		cout<<"DEBUG recoDiphoEvents 002   -  ebcluster "<<i<<" GammaMC "<<MC_index_i<<endl;
 
@@ -612,8 +613,10 @@ void Pi0Tuplizer::recoDiPhoEvents_EB(bool isPi0_)
         		int ind2 = j;//
         		bool Inverted=false;// if pt(i)>pt(j), Inverted = false; else true
 			bool MCInverted=false;
-			if((isPi0_? ebclusters_Pi0_MC2_index[i] : ebclusters_Eta_MC2_index[i]) < 0) MCInverted = true;
- 
+			if(MCAssoc_)
+			{
+				if((isPi0_? ebclusters_Pi0_MC2_index[i] : ebclusters_Eta_MC2_index[i]) > 0) MCInverted = true;
+ 			}
  			//if keep this part, then the leading photon (g1) is the one with higher pt; 
  			//otherwise the leading photon is the one with higher seed energy
 			if( PhotonOrderOption_ == "PhoPtBased" && g1->energy()/cosh(g1->eta()) < g2->energy()/cosh(g2->eta()) ) 
@@ -633,7 +636,7 @@ void Pi0Tuplizer::recoDiPhoEvents_EB(bool isPi0_)
         		math::PtEtaPhiMLorentzVector g2P4_nocor( (g2->energy())/cosh(g2->eta()), g2->eta(), g2->phi(), 0. );
         		math::PtEtaPhiMLorentzVector pi0P4_nocor = g1P4_nocor + g2P4_nocor;
 
-			if( pi0P4_nocor.mass()<0.05 && pi0P4.mass() < 0.05 ) continue;
+			if( pi0P4_nocor.mass()<0.02 && pi0P4.mass() < 0.03 ) continue;
 			cout<<"DEBUG recoDiphoEvents 004"<<endl;
 			//apply kinamatics cut on diphoton and nxtal cut			
 			if(fabs( pi0P4.eta() ) < 1.0 ) 
@@ -708,7 +711,7 @@ void Pi0Tuplizer::recoDiPhoEvents_EB(bool isPi0_)
 
 			//fill pi0/eta ntuple
 			if(N_Pair_rec >= NPI0MAX-1) break; // too many pi0s
-			if( FillDiPhotonNtuple_ && pi0P4.mass() > ((isPi0_)?0.05:0.1) && pi0P4.mass() < ((isPi0_)?0.35:0.9) )
+			if( FillDiPhotonNtuple_ && pi0P4.mass() > ((isPi0_)?0.03:0.2) && pi0P4.mass() < ((isPi0_)?0.3:1.0) )
 			{
 				fromPi0[N_Pair_rec]  =  isPi0_;
 				mPi0_rec[N_Pair_rec]  =  pi0P4.mass();
@@ -766,50 +769,54 @@ void Pi0Tuplizer::recoDiPhoEvents_EB(bool isPi0_)
 				iPhiG2_rec[N_Pair_rec] =  id_2.iphi();
 				
 				cout<<"DEBUG recoDiphoEvents 007"<<endl;
-				if((Inverted && MCInverted ) || ( (!Inverted) && (!MCInverted)))
+				if(MCAssoc_ && isPi0_)
 				{
-					if(isPi0_ && ebclusters_Pi0_MC1_index[ind1]>=0) 
+					if(Inverted && MCInverted)
 					{
-						enG1_true[N_Pair_rec] = Gamma1MC_Pi0_[ebclusters_Pi0_MC1_index[ind1]].E();
-						enG2_true[N_Pair_rec] = Gamma2MC_Pi0_[ebclusters_Pi0_MC1_index[ind1]].E();
+						enG1_true[N_Pair_rec] = Gamma1MC_Pi0_[MC_index_i].E();
+						enG2_true[N_Pair_rec] = Gamma2MC_Pi0_[MC_index_i].E();
 					}
-					if((!isPi0_) && ebclusters_Eta_MC1_index[ind1]>=0) 
+					if(Inverted && (!MCInverted))
 					{
-						enG1_true[N_Pair_rec] = Gamma1MC_Eta_[ebclusters_Eta_MC1_index[ind1]].E();
-						enG2_true[N_Pair_rec] = Gamma2MC_Eta_[ebclusters_Eta_MC1_index[ind1]].E();
+						enG1_true[N_Pair_rec] = Gamma2MC_Pi0_[MC_index_i].E();
+						enG2_true[N_Pair_rec] = Gamma1MC_Pi0_[MC_index_i].E();
 					}
-					if(isPi0_ && ebclusters_Pi0_MC2_index[ind1]>=0) 
+					if((!Inverted) && MCInverted)
 					{
-						enG1_true[N_Pair_rec] = Gamma1MC_Pi0_[ebclusters_Pi0_MC2_index[ind1]].E();
-						enG2_true[N_Pair_rec] = Gamma2MC_Pi0_[ebclusters_Pi0_MC2_index[ind1]].E();
+						enG1_true[N_Pair_rec] = Gamma2MC_Pi0_[MC_index_i].E();
+						enG2_true[N_Pair_rec] = Gamma1MC_Pi0_[MC_index_i].E();
 					}
-					if((!isPi0_) && ebclusters_Eta_MC2_index[ind1]>=0) 
+					if((!Inverted) && (!MCInverted))
 					{
-						enG1_true[N_Pair_rec] = Gamma1MC_Eta_[ebclusters_Eta_MC2_index[ind1]].E();
-						enG2_true[N_Pair_rec] = Gamma2MC_Eta_[ebclusters_Eta_MC2_index[ind1]].E();
+						enG1_true[N_Pair_rec] = Gamma1MC_Pi0_[MC_index_i].E();
+						enG2_true[N_Pair_rec] = Gamma2MC_Pi0_[MC_index_i].E();
 					}
+
 				}
-				else
+
+
+	
+				if(MCAssoc_ && (!isPi0_))
 				{
-					if(isPi0_ && ebclusters_Pi0_MC1_index[ind1]>=0) 
+					if(Inverted && MCInverted)
 					{
-						enG1_true[N_Pair_rec] = Gamma2MC_Pi0_[ebclusters_Pi0_MC1_index[ind1]].E();
-						enG2_true[N_Pair_rec] = Gamma1MC_Pi0_[ebclusters_Pi0_MC1_index[ind1]].E();
+						enG1_true[N_Pair_rec] = Gamma1MC_Eta_[MC_index_i].E();
+						enG2_true[N_Pair_rec] = Gamma2MC_Eta_[MC_index_i].E();
 					}
-					if((!isPi0_) && ebclusters_Eta_MC1_index[ind1]>=0) 
+					if(Inverted && (!MCInverted))
 					{
-						enG1_true[N_Pair_rec] = Gamma2MC_Eta_[ebclusters_Eta_MC1_index[ind1]].E();
-						enG2_true[N_Pair_rec] = Gamma1MC_Eta_[ebclusters_Eta_MC1_index[ind1]].E();
+						enG1_true[N_Pair_rec] = Gamma2MC_Eta_[MC_index_i].E();
+						enG2_true[N_Pair_rec] = Gamma1MC_Eta_[MC_index_i].E();
 					}
-					if(isPi0_ && ebclusters_Pi0_MC2_index[ind1]>=0) 
+					if((!Inverted) && MCInverted)
 					{
-						enG1_true[N_Pair_rec] = Gamma2MC_Pi0_[ebclusters_Pi0_MC2_index[ind1]].E();
-						enG2_true[N_Pair_rec] = Gamma1MC_Pi0_[ebclusters_Pi0_MC2_index[ind1]].E();
+						enG1_true[N_Pair_rec] = Gamma2MC_Eta_[MC_index_i].E();
+						enG2_true[N_Pair_rec] = Gamma1MC_Eta_[MC_index_i].E();
 					}
-					if((!isPi0_) && ebclusters_Eta_MC2_index[ind1]>=0) 
+					if((!Inverted) && (!MCInverted))
 					{
-						enG1_true[N_Pair_rec] = Gamma2MC_Eta_[ebclusters_Eta_MC2_index[ind1]].E();
-						enG2_true[N_Pair_rec] = Gamma1MC_Eta_[ebclusters_Eta_MC2_index[ind1]].E();
+						enG1_true[N_Pair_rec] = Gamma1MC_Eta_[MC_index_i].E();
+						enG2_true[N_Pair_rec] = Gamma2MC_Eta_[MC_index_i].E();
 					}
 
 				}
@@ -868,7 +875,8 @@ void Pi0Tuplizer::recoDiPhoEvents_EE(bool isPi0_)
   	{
 		if(MCAssoc_ && ((isPi0_? eeclusters_Pi0_MC1_index[i] : eeclusters_Eta_MC1_index[i]) <0) && ((isPi0_ ? eeclusters_Pi0_MC2_index[i] : eeclusters_Eta_MC2_index[i]) <0) ) continue;
 		if(g1->seed().subdetId()!=2) continue;
-		int MC_index_i = isPi0_? ((eeclusters_Pi0_MC1_index[i]>=0) ? eeclusters_Pi0_MC1_index[i]: eeclusters_Pi0_MC2_index[i]): ((eeclusters_Eta_MC1_index[i]>=0) ? eeclusters_Eta_MC1_index[i]: eeclusters_Eta_MC2_index[i]);
+		int MC_index_i = -1;
+		if(MCAssoc_) MC_index_i = isPi0_? ((eeclusters_Pi0_MC1_index[i]>=0) ? eeclusters_Pi0_MC1_index[i]: eeclusters_Pi0_MC2_index[i]): ((eeclusters_Eta_MC1_index[i]>=0) ? eeclusters_Eta_MC1_index[i]: eeclusters_Eta_MC2_index[i]);
 
 		cout<<"DEBUG recoDiphoEvents 002   -  eecluster "<<i<<" GammaMC "<<MC_index_i<<endl;
 
@@ -885,7 +893,14 @@ void Pi0Tuplizer::recoDiPhoEvents_EE(bool isPi0_)
 			int ind1 = i;//
         		int ind2 = j;//
         		bool Inverted=false;// if pt(i)>pt(j), Inverted = false; else true
-			 
+	
+			bool MCInverted=false;
+			if(MCAssoc_)
+			{
+				if((isPi0_? eeclusters_Pi0_MC2_index[i] : eeclusters_Eta_MC2_index[i]) > 0) MCInverted = true;
+ 			}
+
+		 
  			//if keep this part, then the leading photon (g1) is the one with higher pt; 
  			//otherwise the leading photon is the one with higher seed energy
 			if( PhotonOrderOption_ == "PhoPtBased" && g1->energy()/cosh(g1->eta()) < g2->energy()/cosh(g2->eta()) ) 
@@ -905,7 +920,7 @@ void Pi0Tuplizer::recoDiPhoEvents_EE(bool isPi0_)
         		math::PtEtaPhiMLorentzVector g2P4_nocor( (g2->energy())/cosh(g2->eta()), g2->eta(), g2->phi(), 0. );
         		math::PtEtaPhiMLorentzVector pi0P4_nocor = g1P4_nocor + g2P4_nocor;
 
-			if( pi0P4_nocor.mass()<0.05 && pi0P4.mass() < 0.05 ) continue;
+			if( pi0P4_nocor.mass()<0.03 && pi0P4.mass() < 0.03 ) continue;
 			cout<<"DEBUG recoDiphoEvents 004"<<endl;
 			//apply kinamatics cut on diphoton and nxtal cut			
 			if(fabs( pi0P4.eta() ) < 1.5 ) continue;
@@ -983,7 +998,7 @@ void Pi0Tuplizer::recoDiPhoEvents_EE(bool isPi0_)
 
 			//fill pi0/eta ntuple
 			if(N_Pair_rec >= NPI0MAX-1) break; // too many pi0s
-			if( FillDiPhotonNtuple_ && pi0P4.mass() > ((isPi0_)?0.05:0.10) && pi0P4.mass() < ((isPi0_)?0.35:0.9) )
+			if( FillDiPhotonNtuple_ && pi0P4.mass() > ((isPi0_)?0.03:0.20) && pi0P4.mass() < ((isPi0_)?0.3:1.0) )
 			{
 				fromPi0[N_Pair_rec]  =  isPi0_;
 				mPi0_rec[N_Pair_rec]  =  pi0P4.mass();
@@ -1040,28 +1055,61 @@ void Pi0Tuplizer::recoDiPhoEvents_EE(bool isPi0_)
 				iXG2_rec[N_Pair_rec] =  id_2.ix();
 				iYG1_rec[N_Pair_rec] =  id_1.iy();
 				iYG2_rec[N_Pair_rec] =  id_2.iy();
+
+
+				if(MCAssoc_ && isPi0_)
+				{
+					if(Inverted && MCInverted)
+					{
+						enG1_true[N_Pair_rec] = Gamma1MC_Pi0_[MC_index_i].E();
+						enG2_true[N_Pair_rec] = Gamma2MC_Pi0_[MC_index_i].E();
+					}
+					if(Inverted && (!MCInverted))
+					{
+						enG1_true[N_Pair_rec] = Gamma2MC_Pi0_[MC_index_i].E();
+						enG2_true[N_Pair_rec] = Gamma1MC_Pi0_[MC_index_i].E();
+					}
+					if((!Inverted) && MCInverted)
+					{
+						enG1_true[N_Pair_rec] = Gamma2MC_Pi0_[MC_index_i].E();
+						enG2_true[N_Pair_rec] = Gamma1MC_Pi0_[MC_index_i].E();
+					}
+					if((!Inverted) && (!MCInverted))
+					{
+						enG1_true[N_Pair_rec] = Gamma1MC_Pi0_[MC_index_i].E();
+						enG2_true[N_Pair_rec] = Gamma2MC_Pi0_[MC_index_i].E();
+					}
+
+				}
+
+
 	
-				if(isPi0_ && eeclusters_Pi0_MC1_index[ind1]>=0) 
+				if(MCAssoc_ && (!isPi0_))
 				{
-					enG1_true[N_Pair_rec] = Gamma1MC_Pi0_[eeclusters_Pi0_MC1_index[ind1]].E();
-					enG2_true[N_Pair_rec] = Gamma2MC_Pi0_[eeclusters_Pi0_MC1_index[ind1]].E();
+					if(Inverted && MCInverted)
+					{
+						enG1_true[N_Pair_rec] = Gamma1MC_Eta_[MC_index_i].E();
+						enG2_true[N_Pair_rec] = Gamma2MC_Eta_[MC_index_i].E();
+					}
+					if(Inverted && (!MCInverted))
+					{
+						enG1_true[N_Pair_rec] = Gamma2MC_Eta_[MC_index_i].E();
+						enG2_true[N_Pair_rec] = Gamma1MC_Eta_[MC_index_i].E();
+					}
+					if((!Inverted) && MCInverted)
+					{
+						enG1_true[N_Pair_rec] = Gamma2MC_Eta_[MC_index_i].E();
+						enG2_true[N_Pair_rec] = Gamma1MC_Eta_[MC_index_i].E();
+					}
+					if((!Inverted) && (!MCInverted))
+					{
+						enG1_true[N_Pair_rec] = Gamma1MC_Eta_[MC_index_i].E();
+						enG2_true[N_Pair_rec] = Gamma2MC_Eta_[MC_index_i].E();
+					}
+
 				}
-				if((!isPi0_) && eeclusters_Eta_MC1_index[ind1]>=0) 
-				{
-					enG1_true[N_Pair_rec] = Gamma1MC_Eta_[eeclusters_Eta_MC1_index[ind1]].E();
-					enG2_true[N_Pair_rec] = Gamma2MC_Eta_[eeclusters_Eta_MC1_index[ind1]].E();
-				}
-				if(isPi0_ && eeclusters_Pi0_MC2_index[ind1]>=0) 
-				{
-					enG1_true[N_Pair_rec] = Gamma2MC_Pi0_[eeclusters_Pi0_MC2_index[ind1]].E();
-					enG2_true[N_Pair_rec] = Gamma1MC_Pi0_[eeclusters_Pi0_MC2_index[ind1]].E();
-				}
-				if((!isPi0_) && eeclusters_Eta_MC2_index[ind1]>=0) 
-				{
-					enG1_true[N_Pair_rec] = Gamma2MC_Eta_[eeclusters_Eta_MC2_index[ind1]].E();
-					enG2_true[N_Pair_rec] = Gamma1MC_Eta_[eeclusters_Eta_MC2_index[ind1]].E();
-				}
-			
+
+
 				if(isPi0_)
 				{
 				seedTimeG1_rec[N_Pair_rec] = eeSeedTime_Pi0_[ind1];	
