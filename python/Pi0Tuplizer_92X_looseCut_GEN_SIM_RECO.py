@@ -1,6 +1,7 @@
 #########################options##############################
 isMC_ = True
 MCAssoc_ = True
+useDRcutPair_ = False
 FillL1SeedFinalDecision_ = False
 FillDiPhotonNtuple_ = True
 FillPhotonNtuple_ = True
@@ -40,10 +41,11 @@ process.options = cms.untracked.PSet(
 #load input file
 process.source = cms.Source('PoolSource',
     fileNames = cms.untracked.vstring(
-        #'file:/afs/cern.ch/work/z/zhicaiz/public/release/PiZero_git/CMSSW_9_2_8/src/PiZero/Pi0Tuplizer/python/step2_1_pi0.root',
-        #'file:/afs/cern.ch/work/z/zhicaiz/public/release/PiZero_git/CMSSW_9_2_8/src/PiZero/Pi0Tuplizer/python/step2_107_pi0.root'
-        'file:/afs/cern.ch/work/z/zhicaiz/public/release/PiZero_git/CMSSW_9_2_8/src/PiZero/Pi0Tuplizer/python/step2_10_eta.root'
+        'file:/afs/cern.ch/work/z/zhicaiz/public/release/PiZero_git/CMSSW_9_2_8/src/PiZero/Pi0Tuplizer/python/step2_1_pi0.root',
+        'file:/afs/cern.ch/work/z/zhicaiz/public/release/PiZero_git/CMSSW_9_2_8/src/PiZero/Pi0Tuplizer/python/step2_107_pi0.root'
+        #'file:/afs/cern.ch/work/z/zhicaiz/public/release/PiZero_git/CMSSW_9_2_8/src/PiZero/Pi0Tuplizer/python/step2_10_eta.root'
 	#'file:/afs/cern.ch/work/z/zhicaiz/public/release/McM/pi0/CMSSW_9_2_8/src/step2_eta_gg.root'
+	#'file:/afs/cern.ch/work/z/zhicaiz/public/release/McM/pi0/CMSSW_9_2_8/src/step2_eta_ppp.root'
     )
 )
 
@@ -65,51 +67,53 @@ EERecHitCollectionTag_Eta = cms.untracked.InputTag("ecalRecHit","EcalRecHitsEE",
 ESRecHitCollectionTag_Eta = cms.untracked.InputTag("ecalPreshowerRecHit","EcalRecHitsES","RECO"),
 genParticles = cms.InputTag("genParticles"),
 PhotonOrderOption = cms.untracked.string("SeedEBased"),# "SeedEBased" (g1 is the one with larger seed Energy) or "PhoPtBased"(g1 is the one with larger pt)
-MC_Asssoc_DeltaR = cms.untracked.double(0.3),
+MC_Asssoc_DeltaR = cms.untracked.double(0.1),
 EB_Seed_E_Pi0_ = cms.untracked.double(0.5),
 EE_Seed_E_Pi0_ = cms.untracked.double(0.5),
 pairPtCut_barrel1_Pi0_ = cms.untracked.double(1.0),
 pairPtCut_barrel2_Pi0_ = cms.untracked.double(1.0),
 pairPtCut_endcap1_Pi0_ = cms.untracked.double(1.0),
 pairPtCut_endcap2_Pi0_ = cms.untracked.double(1.0),
-gPtCut_barrel1_Pi0_ = cms.untracked.double(0.65),
-gPtCut_barrel2_Pi0_ = cms.untracked.double(0.65),
-gPtCut_endcap1_Pi0_ = cms.untracked.double(0.65),
-gPtCut_endcap2_Pi0_ = cms.untracked.double(0.65),
-s4s9Cut_barrel1_Pi0_ = cms.untracked.double(0.3),
-s4s9Cut_barrel2_Pi0_ = cms.untracked.double(0.3),
-s4s9Cut_endcap1_Pi0_ = cms.untracked.double(0.3),
-s4s9Cut_endcap2_Pi0_ = cms.untracked.double(0.3),
-nxtal1Cut_barrel1_Pi0_ = cms.untracked.double(0.),
-nxtal1Cut_barrel2_Pi0_ = cms.untracked.double(0.),
-nxtal1Cut_endcap1_Pi0_ = cms.untracked.double(0.),
-nxtal1Cut_endcap2_Pi0_ = cms.untracked.double(0.),
-nxtal2Cut_barrel1_Pi0_ = cms.untracked.double(0.),
-nxtal2Cut_barrel2_Pi0_ = cms.untracked.double(0.),
-nxtal2Cut_endcap1_Pi0_ = cms.untracked.double(0.),
-nxtal2Cut_endcap2_Pi0_ = cms.untracked.double(0.),
+gPtCut_barrel1_Pi0_ = cms.untracked.double(1.00),
+gPtCut_barrel2_Pi0_ = cms.untracked.double(1.00),
+gPtCut_endcap1_Pi0_ = cms.untracked.double(1.00),
+gPtCut_endcap2_Pi0_ = cms.untracked.double(1.00),
+s4s9Cut_barrel1_Pi0_ = cms.untracked.double(0.75),
+s4s9Cut_barrel2_Pi0_ = cms.untracked.double(0.75),
+s4s9Cut_endcap1_Pi0_ = cms.untracked.double(0.75),
+s4s9Cut_endcap2_Pi0_ = cms.untracked.double(0.75),
+nxtal1Cut_barrel1_Pi0_ = cms.untracked.double(6.5),
+nxtal1Cut_barrel2_Pi0_ = cms.untracked.double(0.5),
+nxtal1Cut_endcap1_Pi0_ = cms.untracked.double(6.5),
+nxtal1Cut_endcap2_Pi0_ = cms.untracked.double(6.5),
+nxtal2Cut_barrel1_Pi0_ = cms.untracked.double(6.5),
+nxtal2Cut_barrel2_Pi0_ = cms.untracked.double(6.5),
+nxtal2Cut_endcap1_Pi0_ = cms.untracked.double(6.5),
+nxtal2Cut_endcap2_Pi0_ = cms.untracked.double(6.5),
 EB_Seed_E_Eta_ = cms.untracked.double(0.5),
 EE_Seed_E_Eta_ = cms.untracked.double(0.5),
 pairPtCut_barrel1_Eta_ = cms.untracked.double(1.0),
 pairPtCut_barrel2_Eta_ = cms.untracked.double(1.0),
 pairPtCut_endcap1_Eta_ = cms.untracked.double(1.0),
 pairPtCut_endcap2_Eta_ = cms.untracked.double(1.0),
-gPtCut_barrel1_Eta_ = cms.untracked.double(0.65),
-gPtCut_barrel2_Eta_ = cms.untracked.double(0.65),
-gPtCut_endcap1_Eta_ = cms.untracked.double(0.65),
-gPtCut_endcap2_Eta_ = cms.untracked.double(0.65),
-s4s9Cut_barrel1_Eta_ = cms.untracked.double(0.3),
-s4s9Cut_barrel2_Eta_ = cms.untracked.double(0.3),
-s4s9Cut_endcap1_Eta_ = cms.untracked.double(0.3),
-s4s9Cut_endcap2_Eta_ = cms.untracked.double(0.3),
-nxtal1Cut_barrel1_Eta_ = cms.untracked.double(0.),
-nxtal1Cut_barrel2_Eta_ = cms.untracked.double(0.),
-nxtal1Cut_endcap1_Eta_ = cms.untracked.double(0.),
-nxtal1Cut_endcap2_Eta_ = cms.untracked.double(0.),
-nxtal2Cut_barrel1_Eta_ = cms.untracked.double(0.),
-nxtal2Cut_barrel2_Eta_ = cms.untracked.double(0.),
-nxtal2Cut_endcap1_Eta_ = cms.untracked.double(0.),
-nxtal2Cut_endcap2_Eta_ = cms.untracked.double(0.),
+gPtCut_barrel1_Eta_ = cms.untracked.double(1.00),
+gPtCut_barrel2_Eta_ = cms.untracked.double(1.00),
+gPtCut_endcap1_Eta_ = cms.untracked.double(1.00),
+gPtCut_endcap2_Eta_ = cms.untracked.double(1.00),
+s4s9Cut_barrel1_Eta_ = cms.untracked.double(0.75),
+s4s9Cut_barrel2_Eta_ = cms.untracked.double(0.75),
+s4s9Cut_endcap1_Eta_ = cms.untracked.double(0.75),
+s4s9Cut_endcap2_Eta_ = cms.untracked.double(0.75),
+nxtal1Cut_barrel1_Eta_ = cms.untracked.double(6.5),
+nxtal1Cut_barrel2_Eta_ = cms.untracked.double(6.5),
+nxtal1Cut_endcap1_Eta_ = cms.untracked.double(6.5),
+nxtal1Cut_endcap2_Eta_ = cms.untracked.double(6.5),
+nxtal2Cut_barrel1_Eta_ = cms.untracked.double(6.5),
+nxtal2Cut_barrel2_Eta_ = cms.untracked.double(6.5),
+nxtal2Cut_endcap1_Eta_ = cms.untracked.double(6.5),
+nxtal2Cut_endcap2_Eta_ = cms.untracked.double(6.5),
+DRcutPair_Pi0_	= cms.untracked.double(0.30),
+DRcutPair_Eta_	= cms.untracked.double(0.30),
 isoGammaBeltdR_Zone_Pi0_        = cms.untracked.double(0.2),
 isoGammaBeltdR_Zone_Eta_        = cms.untracked.double(0.2),
 isoPairBeltdR_Zone_Pi0_         = cms.untracked.double(0.2),
@@ -131,6 +135,10 @@ if MCAssoc_:
         process.ntuples.MCAssoc = cms.untracked.bool(True)
 else:
         process.ntuples.MCAssoc = cms.untracked.bool(False)
+if useDRcutPair_:
+	process.ntuples.useDRcutPair = cms.untracked.bool(True)
+else:
+	process.ntuples.useDRcutPair = cms.untracked.bool(False)
 if FillL1SeedFinalDecision_:
         process.ntuples.FillL1SeedFinalDecision = cms.untracked.bool(True)
 else:

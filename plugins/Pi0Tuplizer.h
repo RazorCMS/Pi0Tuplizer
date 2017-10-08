@@ -244,8 +244,10 @@ private:
 	float 	isoG2_rec[NPI0MAX];	
 	float 	enG1_rec[NPI0MAX];	
 	float 	enG1_true[NPI0MAX];	
+	float 	dRG1_withtrue[NPI0MAX];	
 	float 	enG2_rec[NPI0MAX];	
 	float 	enG2_true[NPI0MAX];	
+	float 	dRG2_withtrue[NPI0MAX];	
 	float 	etaG1_rec[NPI0MAX];	
 	float 	etaG2_rec[NPI0MAX];	
 	float 	phiG1_rec[NPI0MAX];	
@@ -385,6 +387,7 @@ private:
 //cuts and options read from cfg file	
  	bool isMC_;
  	bool MCAssoc_;
+	bool useDRcutPair_;
 	double MC_Asssoc_DeltaR;
 	//bool isPi0_;
 	bool FillL1SeedFinalDecision_;
@@ -413,6 +416,7 @@ private:
 	double nxtal2Cut_barrel2_Pi0_;
 	double nxtal2Cut_endcap1_Pi0_;
 	double nxtal2Cut_endcap2_Pi0_;
+	double DRcutPair_Pi0_;
 
 	double EB_Seed_E_Eta_; //seed energy threshold setting for EB
 	double EE_Seed_E_Eta_; //seed energy threshold setting for EE
@@ -436,6 +440,7 @@ private:
 	double nxtal2Cut_barrel2_Eta_;
 	double nxtal2Cut_endcap1_Eta_;
 	double nxtal2Cut_endcap2_Eta_;
+	double DRcutPair_Eta_;
 
 	double isoGammaBeltdR_Zone_Pi0_;
 	double isoGammaBeltdEta_Zone_Pi0_;
