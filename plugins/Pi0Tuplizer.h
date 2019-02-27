@@ -100,6 +100,24 @@ struct PosCalcParams {
      float  param_X0_         ;
 };
 
+struct cluster3x3map {
+	float ehit[9];
+	int iEtaiX[9];
+	int iPhiiY[9];
+	bool isUsedByOthers[9];
+
+	void initAll()
+	{
+		for(int i=0; i<9; i++)
+		{
+			ehit[i] = 0;
+			iEtaiX[i] = -999;
+			iPhiiY[i] = -999;
+			isUsedByOthers[i] = false;
+		}
+	}
+};
+
 class Pi0Tuplizer : public edm::EDAnalyzer {
 public:
  //analyzer constructor and destructor
@@ -139,6 +157,8 @@ private:
 	
 	float GetDeltaR(float eta1, float eta2, float phi1, float phi2);
 	float DeltaPhi(float phi1, float phi2);
+	void setmapforCNN(cluster3x3map g1map, cluster3x3map g2map, int index_Pi0, bool isEB);
+	float getGapParameter(int ieta, int iphi);
  //output TTree and file
       	TTree *Pi0Events;
       	TTree *PhoEvents;
@@ -273,6 +293,12 @@ private:
 	float 	s2s9G2_rec[NPI0MAX];	
 	float 	s1s9G1_rec[NPI0MAX];	
 	float 	s1s9G2_rec[NPI0MAX];	
+	float ehitG1_rec[NPI0MAX][9];
+	float overlapG1_rec[NPI0MAX][9];
+	float gapG1_rec[NPI0MAX][9];
+	float ehitG2_rec[NPI0MAX][9];
+	float overlapG2_rec[NPI0MAX][9];
+	float gapG2_rec[NPI0MAX][9];
 
  //variables to be saved in the photon ntuple
 	float pho_E;	
@@ -299,6 +325,10 @@ private:
  	std::vector< CaloCluster > ebclusters_Eta_;
 	std::vector< CaloCluster > eeclusters_Pi0_;
 	std::vector< CaloCluster > eeclusters_Eta_;
+ 	std::vector< cluster3x3map > ebclusters_Pi0_hitmap;
+ 	std::vector< cluster3x3map > ebclusters_Eta_hitmap;
+ 	std::vector< cluster3x3map > eeclusters_Pi0_hitmap;
+ 	std::vector< cluster3x3map > eeclusters_Eta_hitmap;
 
 	vector<int> ebclusters_Pi0_MC1_index;
 	vector<int> ebclusters_Eta_MC1_index;
